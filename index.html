@@ -338,6 +338,9 @@
     }
 
     function addItem(kind) {
+      if (editingState) {
+        cancelEdit(editingState.kind, editingState.idx);
+      }
       const types = kind === 'income' ? state.incomeTypes : state.expenseTypes;
       const defaultType = types[0] || null;
       const items = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'];
@@ -347,10 +350,8 @@
         amount: 0,
         typeId: defaultType ? defaultType.id : null,
         note: '',
-        order: items.length,
         _isNew: true,
       });
-      saveState();
       editItem(kind, items.length - 1);
     }
 
@@ -428,10 +429,14 @@
       if (dragSrcKind === null) return;
       if (target.dataset.kind !== dragSrcKind) return;
       const destIdx = parseInt(target.dataset.idx, 10);
-      if (destIdx === dragSrcIdx) return;
-      const key = dragSrcKind === 'income' ? 'incomes' : 'expenses';
+      const srcKind = dragSrcKind;
+      const srcIdx = dragSrcIdx;
+      dragSrcKind = null;
+      dragSrcIdx = null;
+      if (destIdx === srcIdx) return;
+      const key = srcKind === 'income' ? 'incomes' : 'expenses';
       const items = state.months[activeMonth][key];
-      const [moved] = items.splice(dragSrcIdx, 1);
+      const [moved] = items.splice(srcIdx, 1);
       items.splice(destIdx, 0, moved);
       saveState();
       renderContent();
