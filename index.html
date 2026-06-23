@@ -120,6 +120,7 @@
     const STORAGE_KEY = 'financial-board-v1';
     let state = null; // loaded in init()
     let activeMonth = null; // "YYYY-MM"
+    let activeYearView = null; // number — when set, show year overview instead of month
     let openYears = new Set(); // tracks which year groups are expanded
     let openSections = new Set(['incomes', 'expenses']); // both open by default
     let editingState = null; // { kind: 'income'|'expense', idx: number } | null
@@ -182,9 +183,10 @@
       let html = '';
       for (let y = maxYear; y >= 2020; y--) {
         const isOpen = openYears.has(y);
+        const isYearActive = activeYearView === y;
         html += `<div class="year-group">
           <button class="year-btn" onclick="toggleYear(${y})" id="year-btn-${y}">
-            <span>${y}</span><span id="year-arrow-${y}">${isOpen ? '▾' : '▸'}</span>
+            <span style="display:flex;align-items:center;gap:6px;">${y}<span onclick="event.stopPropagation();selectYearView(${y})" title="${y} yılı özeti" style="font-size:11px;padding:1px 5px;border-radius:4px;border:1px solid ${isYearActive ? 'var(--remaining)' : 'var(--border)'};color:${isYearActive ? 'var(--remaining)' : 'var(--text-muted)'};background:${isYearActive ? '#eff6ff' : 'transparent'};cursor:pointer;">📊</span></span><span id="year-arrow-${y}">${isOpen ? '▾' : '▸'}</span>
           </button>
           <div class="year-months" id="year-months-${y}" style="display:${isOpen ? 'block' : 'none'}">`;
         for (let m = 0; m < 12; m++) {
@@ -208,13 +210,22 @@
 
     function selectMonth(key) {
       activeMonth = key;
+      activeYearView = null;
       ensureMonth(key);
+      renderSidebar();
+      renderContent();
+    }
+
+    function selectYearView(y) {
+      activeYearView = y;
+      activeMonth = null;
       renderSidebar();
       renderContent();
     }
 
     function renderContent() {
       const content = document.getElementById('content');
+      if (activeYearView) { renderYearView(activeYearView); return; }
       if (!activeMonth) { content.innerHTML = ''; return; }
       const [y, m] = activeMonth.split('-');
       const monthData = state.months[activeMonth] || { incomes: [], expenses: [] };
@@ -283,6 +294,58 @@
           </div>
         </div>
       `;
+    }
+
+    function renderYearView(y) {
+      const content = document.getElementById('content');
+      const months = [];
+      for (let m = 1; m <= 12; m++) {
+        const key = `${y}-${String(m).padStart(2, '0')}`;
+        const data = state.months[key];
+        if (!data || (!data.incomes.length && !data.expenses.length)) continue;
+        const income  = data.incomes.reduce((s, i) => s + (i.amount || 0), 0);
+        const expense = data.expenses.reduce((s, i) => s + (i.amount || 0), 0);
+        months.push({ key, label: MONTHS[m - 1], income, expense, remaining: income - expense });
+      }
+
+      const totIncome  = months.reduce((s, r) => s + r.income, 0);
+      const totExpense = months.reduce((s, r) => s + r.expense, 0);
+      const totRemain  = totIncome - totExpense;
+
+      const rows = months.length ? months.map(r => {
+        const rc = r.remaining >= 0 ? 'var(--remaining)' : 'var(--expense)';
+        return `<tr onclick="selectMonth('${r.key}')" style="cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+          <td style="padding:10px 16px;font-weight:500;">${r.label}</td>
+          <td style="padding:10px 16px;text-align:right;color:var(--income)">${fmt(r.income)}</td>
+          <td style="padding:10px 16px;text-align:right;color:var(--expense)">${fmt(r.expense)}</td>
+          <td style="padding:10px 16px;text-align:right;font-weight:700;color:${rc}">${fmt(r.remaining)}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="4" style="padding:20px 16px;color:var(--text-muted);text-align:center;">${y} yılına ait veri yok.</td></tr>`;
+
+      const rc = totRemain >= 0 ? 'var(--remaining)' : 'var(--expense)';
+      content.innerHTML = `
+        <h2 style="font-size:18px;margin-bottom:16px;">${y} Yılı Özeti</h2>
+        <div class="section-card">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border);">
+                <th style="padding:10px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Ay</th>
+                <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Gelir</th>
+                <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Gider</th>
+                <th style="padding:10px 16px;text-align:right;font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Kalan</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            ${months.length ? `<tfoot>
+              <tr style="border-top:2px solid var(--border);background:#f8fafc;">
+                <td style="padding:10px 16px;font-weight:700;">Toplam</td>
+                <td style="padding:10px 16px;text-align:right;font-weight:700;color:var(--income)">${fmt(totIncome)}</td>
+                <td style="padding:10px 16px;text-align:right;font-weight:700;color:var(--expense)">${fmt(totExpense)}</td>
+                <td style="padding:10px 16px;text-align:right;font-weight:700;color:${rc}">${fmt(totRemain)}</td>
+              </tr>
+            </tfoot>` : ''}
+          </table>
+        </div>`;
     }
 
     function fmt(n) {
