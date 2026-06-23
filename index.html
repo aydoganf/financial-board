@@ -87,6 +87,7 @@
     let state = null; // loaded in init()
     let activeMonth = null; // "YYYY-MM"
     let openYears = new Set(); // tracks which year groups are expanded
+    let openSections = new Set(['incomes', 'expenses']); // both open by default
 
     function loadState() {
       try {
@@ -204,11 +205,11 @@
         </div>
         <div class="section-card">
           <div class="section-header" onclick="toggleSection('incomes')">
-            <span>▾</span>
+            <span class="section-arrow">${openSections.has('incomes') ? '▾' : '▸'}</span>
             <span class="section-title" style="color:var(--income)">GELİRLER</span>
             <span class="section-total" style="color:var(--income)">${fmt(totalIncome)}</span>
           </div>
-          <div class="section-body" id="section-incomes">
+          <div class="section-body" id="section-incomes" style="display:${openSections.has('incomes') ? 'block' : 'none'}">
             ${renderItemList(monthData.incomes, 'income')}
             <div style="padding:10px 16px;">
               <button onclick="addItem('income')" style="font-size:13px;color:var(--income);border:1px dashed var(--income);border-radius:6px;padding:6px 12px;">+ Yeni Gelir Ekle</button>
@@ -217,11 +218,11 @@
         </div>
         <div class="section-card">
           <div class="section-header" onclick="toggleSection('expenses')">
-            <span>▾</span>
+            <span class="section-arrow">${openSections.has('expenses') ? '▾' : '▸'}</span>
             <span class="section-title" style="color:var(--expense)">GİDERLER</span>
             <span class="section-total" style="color:var(--expense)">${fmt(totalExpense)}</span>
           </div>
-          <div class="section-body" id="section-expenses">
+          <div class="section-body" id="section-expenses" style="display:${openSections.has('expenses') ? 'block' : 'none'}">
             ${renderItemList(monthData.expenses, 'expense')}
             <div style="padding:10px 16px;">
               <button onclick="addItem('expense')" style="font-size:13px;color:var(--expense);border:1px dashed var(--expense);border-radius:6px;padding:6px 12px;">+ Yeni Gider Ekle</button>
@@ -238,12 +239,14 @@
     function toggleSection(id) {
       const body = document.getElementById(`section-${id}`);
       const header = body.previousElementSibling;
-      const arrow = header.querySelector('span');
+      const arrow = header.querySelector('.section-arrow');
       const open = body.style.display !== 'none';
       body.style.display = open ? 'none' : 'block';
       arrow.textContent = open ? '▸' : '▾';
+      if (open) openSections.delete(id); else openSections.add(id);
     }
 
+    // TODO Task 5: replace with actual item rows
     function renderItemList(items, kind) {
       return `<p style="padding:12px 16px;color:var(--text-muted);font-size:13px;">Henüz kalem yok.</p>`;
     }
