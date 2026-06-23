@@ -329,9 +329,9 @@
         typeId: defaultType ? defaultType.id : null,
         note: '',
         order: items.length,
+        _isNew: true,
       });
       saveState();
-      renderContent();
       editItem(kind, items.length - 1);
     }
 
@@ -363,7 +363,7 @@
       if (isNaN(amount) || amount < 0) { errEl.textContent = 'Geçerli bir tutar girin (≥ 0).'; return; }
 
       const key = kind === 'income' ? 'incomes' : 'expenses';
-      state.months[activeMonth][key][idx] = { ...state.months[activeMonth][key][idx], name, amount, typeId, note };
+      state.months[activeMonth][key][idx] = { ...state.months[activeMonth][key][idx], name, amount, typeId, note, _isNew: false };
       saveState();
       editingState = null;
       renderContent();
@@ -372,7 +372,7 @@
     function cancelEdit(kind, idx) {
       const key = kind === 'income' ? 'incomes' : 'expenses';
       const item = state.months[activeMonth][key][idx];
-      if (item.amount === 0 && (item.name === 'Yeni Gelir' || item.name === 'Yeni Gider')) {
+      if (item._isNew) {
         state.months[activeMonth][key].splice(idx, 1);
         saveState();
       }
