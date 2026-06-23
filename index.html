@@ -44,7 +44,81 @@
     <div id="modal"></div>
   </div>
   <script>
-    // app code goes here
+    // ── Constants ──────────────────────────────────────────────
+    const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+    const DEFAULT_INCOME_TYPES = [
+      { id: 'it1', name: 'Düzenli Maaş', color: '#2563eb' },
+      { id: 'it2', name: 'Yan Gelir',    color: '#7c3aed' },
+      { id: 'it3', name: 'Kira Geliri',  color: '#059669' },
+      { id: 'it4', name: 'Yatırım',      color: '#d97706' },
+      { id: 'it5', name: 'Diğer',        color: '#64748b' },
+    ];
+
+    const DEFAULT_EXPENSE_TYPES = [
+      { id: 'et1', name: 'Konut',        color: '#dc2626' },
+      { id: 'et2', name: 'Market & Gıda',color: '#ea580c' },
+      { id: 'et3', name: 'Faturalar',    color: '#ca8a04' },
+      { id: 'et4', name: 'Ulaşım',       color: '#0891b2' },
+      { id: 'et5', name: 'Sağlık',       color: '#db2777' },
+      { id: 'et6', name: 'Eğitim',       color: '#4f46e5' },
+      { id: 'et7', name: 'Eğlence',      color: '#7c3aed' },
+      { id: 'et8', name: 'Diğer',        color: '#64748b' },
+    ];
+
+    // ── State ──────────────────────────────────────────────────
+    const STORAGE_KEY = 'financial-board-v1';
+    let state = null; // loaded in init()
+    let activeMonth = null; // "YYYY-MM"
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        showStorageWarning();
+      }
+      return null;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        showStorageWarning();
+      }
+    }
+
+    function initState() {
+      const saved = loadState();
+      state = saved || {
+        incomeTypes: DEFAULT_INCOME_TYPES.map(t => ({ ...t })),
+        expenseTypes: DEFAULT_EXPENSE_TYPES.map(t => ({ ...t })),
+        months: {},
+      };
+    }
+
+    function ensureMonth(key) {
+      if (!state.months[key]) {
+        state.months[key] = { incomes: [], expenses: [] };
+        saveState();
+      }
+    }
+
+    function uuid() {
+      return crypto.randomUUID();
+    }
+
+    function showStorageWarning() {
+      let banner = document.getElementById('storage-warning');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'storage-warning';
+        banner.style = 'background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:8px 16px;font-size:13px;text-align:center;';
+        banner.textContent = '⚠️ localStorage kullanılamıyor — veriler kaydedilmeyecek.';
+        document.body.prepend(banner);
+      }
+    }
   </script>
 </body>
 </html>
