@@ -35,6 +35,15 @@
     .month-btn { width: 100%; text-align: left; padding: 6px 14px 6px 28px; font-size: 13px; color: var(--text); border-radius: 0; transition: background .1s; }
     .month-btn:hover { background: #f1f5f9; }
     .month-btn.active { background: #eff6ff; color: var(--remaining); font-weight: 600; }
+    #summary-strip { display: flex; gap: 12px; margin-bottom: 20px; }
+    .stat-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .stat-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+    .stat-card .value { font-size: 22px; font-weight: 700; }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .section-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; }
+    .section-header .section-title { font-size: 14px; font-weight: 700; flex: 1; }
+    .section-header .section-total { font-size: 14px; font-weight: 600; }
+    .section-body { border-top: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -167,7 +176,76 @@
     }
 
     function renderContent() {
-      document.getElementById('content').innerHTML = `<p style="color:var(--text-muted)">Ay: ${activeMonth}</p>`;
+      const content = document.getElementById('content');
+      if (!activeMonth) { content.innerHTML = ''; return; }
+      const [y, m] = activeMonth.split('-');
+      const monthData = state.months[activeMonth] || { incomes: [], expenses: [] };
+      const totalIncome = monthData.incomes.reduce((s, i) => s + (i.amount || 0), 0);
+      const totalExpense = monthData.expenses.reduce((s, i) => s + (i.amount || 0), 0);
+      const remaining = totalIncome - totalExpense;
+      const remainColor = remaining >= 0 ? 'var(--remaining)' : 'var(--expense)';
+      const monthLabel = `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
+
+      content.innerHTML = `
+        <h2 style="font-size:18px;margin-bottom:16px;">${monthLabel}</h2>
+        <div id="summary-strip">
+          <div class="stat-card">
+            <div class="label">Toplam Gelir</div>
+            <div class="value" style="color:var(--income)">${fmt(totalIncome)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Toplam Gider</div>
+            <div class="value" style="color:var(--expense)">${fmt(totalExpense)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Kalan</div>
+            <div class="value" style="color:${remainColor}">${fmt(remaining)}</div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header" onclick="toggleSection('incomes')">
+            <span>▾</span>
+            <span class="section-title" style="color:var(--income)">GELİRLER</span>
+            <span class="section-total" style="color:var(--income)">${fmt(totalIncome)}</span>
+          </div>
+          <div class="section-body" id="section-incomes">
+            ${renderItemList(monthData.incomes, 'income')}
+            <div style="padding:10px 16px;">
+              <button onclick="addItem('income')" style="font-size:13px;color:var(--income);border:1px dashed var(--income);border-radius:6px;padding:6px 12px;">+ Yeni Gelir Ekle</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header" onclick="toggleSection('expenses')">
+            <span>▾</span>
+            <span class="section-title" style="color:var(--expense)">GİDERLER</span>
+            <span class="section-total" style="color:var(--expense)">${fmt(totalExpense)}</span>
+          </div>
+          <div class="section-body" id="section-expenses">
+            ${renderItemList(monthData.expenses, 'expense')}
+            <div style="padding:10px 16px;">
+              <button onclick="addItem('expense')" style="font-size:13px;color:var(--expense);border:1px dashed var(--expense);border-radius:6px;padding:6px 12px;">+ Yeni Gider Ekle</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function fmt(n) {
+      return '₺' + Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function toggleSection(id) {
+      const body = document.getElementById(`section-${id}`);
+      const header = body.previousElementSibling;
+      const arrow = header.querySelector('span');
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.textContent = open ? '▸' : '▾';
+    }
+
+    function renderItemList(items, kind) {
+      return `<p style="padding:12px 16px;color:var(--text-muted);font-size:13px;">Henüz kalem yok.</p>`;
     }
 
     // ── Init ───────────────────────────────────────────────────
