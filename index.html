@@ -292,7 +292,7 @@
       return items.map((item, idx) => {
         if (idx === editingIdx) return renderEditRow(item, kind, idx, types);
         const type = types.find(t => t.id === item.typeId);
-        const badgeColor = type ? type.color : '#64748b';
+        const badgeColor = type ? safeColor(type.color) : '#64748b';
         const badgeBg = badgeColor + '20';
         const badgeName = type ? type.name : '—';
         const noteHtml = item.note ? `<div class="item-note">${escHtml(item.note)}</div>` : '';
@@ -313,6 +313,10 @@
 
     function escHtml(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function safeColor(c) {
+      return /^#[0-9a-fA-F]{6}$/.test(String(c)) ? c : '#64748b';
     }
 
     function renderEditRow(item, kind, idx, types) {
@@ -472,8 +476,9 @@
                 ? `<input type="color" id="ec-${t.id}" value="${t.color}" />
                    <input type="text" id="en-${t.id}" value="${escHtml(t.name)}" />
                    <button class="btn-save" style="font-size:12px;padding:3px 10px;" onclick="saveType('${t.id}')">Kaydet</button>
-                   <button class="btn-cancel" style="font-size:12px;padding:3px 10px;" onclick="cancelTypeEdit()">İptal</button>`
-                : `<span style="width:18px;height:18px;border-radius:50%;background:${t.color};display:inline-block;flex-shrink:0"></span>
+                   <button class="btn-cancel" style="font-size:12px;padding:3px 10px;" onclick="cancelTypeEdit()">İptal</button>
+                   <span class="type-warn" id="tw-${t.id}"></span>`
+                : `<span style="width:18px;height:18px;border-radius:50%;background:${safeColor(t.color)};display:inline-block;flex-shrink:0"></span>
                    <span style="flex:1">${escHtml(t.name)}</span>
                    <button style="font-size:12px;border:1px solid var(--border);border-radius:4px;padding:2px 7px;" onclick="startTypeEdit('${t.id}')">✏</button>
                    <button class="type-del-btn" onclick="deleteType('${t.id}')">🗑</button>
@@ -513,9 +518,14 @@
       const name = document.getElementById(`en-${id}`).value.trim();
       const color = document.getElementById(`ec-${id}`).value;
       const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
+      const errEl = document.getElementById(`tw-${id}`);
       if (!name) {
-        const errEl = document.getElementById(`tw-${id}`);
         if (errEl) errEl.textContent = 'Ad boş olamaz.';
+        return;
+      }
+      const duplicate = types.find(t => t.id !== id && t.name.toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        if (errEl) errEl.textContent = 'Bu isimde bir tip zaten var.';
         return;
       }
       const type = types.find(t => t.id === id);
@@ -553,13 +563,13 @@
       ensureMonth(activeMonth);
       renderSidebar();
       renderContent();
+      document.getElementById('modal-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+      document.getElementById('btn-types').addEventListener('click', openTypesModal);
     }
 
     document.addEventListener('DOMContentLoaded', init);
-    document.getElementById('modal-overlay').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-    document.getElementById('btn-types').addEventListener('click', openTypesModal);
   </script>
 </body>
 </html>
