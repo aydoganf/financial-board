@@ -77,6 +77,7 @@
     const STORAGE_KEY = 'financial-board-v1';
     let state = null; // loaded in init()
     let activeMonth = null; // "YYYY-MM"
+    let openYears = new Set(); // tracks which year groups are expanded
 
     function loadState() {
       try {
@@ -130,16 +131,15 @@
     // ── Render: Sidebar ────────────────────────────────────────
     function renderSidebar() {
       const sidebar = document.getElementById('sidebar');
-      const currentYear = new Date().getFullYear();
-      const maxYear = currentYear + 5;
+      const maxYear = new Date().getFullYear() + 5;
       let html = '';
       for (let y = maxYear; y >= 2020; y--) {
-        const isCurrentYear = y === currentYear;
+        const isOpen = openYears.has(y);
         html += `<div class="year-group">
           <button class="year-btn" onclick="toggleYear(${y})" id="year-btn-${y}">
-            <span>${y}</span><span id="year-arrow-${y}">${isCurrentYear ? '▾' : '▸'}</span>
+            <span>${y}</span><span id="year-arrow-${y}">${isOpen ? '▾' : '▸'}</span>
           </button>
-          <div class="year-months" id="year-months-${y}" style="display:${isCurrentYear ? 'block' : 'none'}">`;
+          <div class="year-months" id="year-months-${y}" style="display:${isOpen ? 'block' : 'none'}">`;
         for (let m = 0; m < 12; m++) {
           const key = `${y}-${String(m + 1).padStart(2, '0')}`;
           const isActive = key === activeMonth;
@@ -156,6 +156,7 @@
       const open = months.style.display !== 'none';
       months.style.display = open ? 'none' : 'block';
       arrow.textContent = open ? '▸' : '▾';
+      if (open) openYears.delete(y); else openYears.add(y);
     }
 
     function selectMonth(key) {
@@ -174,6 +175,7 @@
       initState();
       const now = new Date();
       activeMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      openYears.add(now.getFullYear());
       ensureMonth(activeMonth);
       renderSidebar();
       renderContent();
