@@ -306,9 +306,7 @@
       });
       saveState();
       renderContent();
-      // open edit immediately for the new item
-      const newIdx = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'].length - 1;
-      editItem(kind, newIdx);
+      editItem(kind, items.length - 1);
     }
 
     function deleteItem(kind, idx) {
@@ -321,6 +319,12 @@
     function editItem(kind, idx) {
       // TODO Task 6
     }
+
+    // Drag & Drop stubs — full implementation in Task 7
+    function onDragStart(e) {}
+    function onDragOver(e) { e.preventDefault(); }
+    function onDrop(e) {}
+    function onDragEnd(e) {}
 
     // ── Init ───────────────────────────────────────────────────
     function init() {
