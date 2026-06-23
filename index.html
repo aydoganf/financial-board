@@ -65,6 +65,19 @@
     .edit-actions { display: flex; gap: 8px; }
     .btn-save { background: #2563eb; color: #fff; border-radius: 5px; padding: 5px 14px; font-size: 13px; }
     .btn-cancel { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 5px 14px; font-size: 13px; }
+    .modal-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .modal-tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); }
+    .modal-tab.active { background: #eff6ff; color: var(--remaining); border-color: #bfdbfe; }
+    .type-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .type-row input[type=text] { flex: 1; font-family: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; }
+    .type-row input[type=color] { width: 32px; height: 28px; border: 1px solid var(--border); border-radius: 5px; padding: 1px; cursor: pointer; }
+    .type-add-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+    .type-add-row input[type=text] { flex:1; font-family: inherit; font-size:13px; border:1px solid var(--border); border-radius:5px; padding:5px 8px; }
+    .type-add-row input[type=color] { width:32px; height:32px; border:1px solid var(--border); border-radius:5px; padding:1px; cursor:pointer; }
+    .btn-add-type { background: #2563eb; color: #fff; border-radius: 5px; padding: 5px 14px; font-size: 13px; }
+    .type-del-btn { color: var(--expense); font-size: 13px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
+    .type-warn { color: var(--expense); font-size: 11px; margin-top: 2px; }
+    .modal-close { float: right; font-size: 18px; color: var(--text-muted); background: none; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -110,6 +123,8 @@
     let openYears = new Set(); // tracks which year groups are expanded
     let openSections = new Set(['incomes', 'expenses']); // both open by default
     let editingState = null; // { kind: 'income'|'expense', idx: number } | null
+    let modalTab = 'income'; // 'income' | 'expense'
+    let typeEditingId = null;
 
     function loadState() {
       try {
@@ -429,6 +444,106 @@
       e.currentTarget.style.borderTop = '';
     }
 
+    // ── Modal ──────────────────────────────────────────────────
+    function openTypesModal() {
+      document.getElementById('modal-overlay').classList.add('open');
+      renderModal();
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      typeEditingId = null;
+    }
+
+    function renderModal() {
+      const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
+      const modal = document.getElementById('modal');
+      modal.innerHTML = `
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h3 style="font-size:16px;margin-bottom:14px;">Tip Yönetimi</h3>
+        <div class="modal-tabs">
+          <button class="modal-tab${modalTab === 'income' ? ' active' : ''}" onclick="setModalTab('income')">Gelir Tipleri</button>
+          <button class="modal-tab${modalTab === 'expense' ? ' active' : ''}" onclick="setModalTab('expense')">Gider Tipleri</button>
+        </div>
+        <div id="type-list">
+          ${types.map(t => `
+            <div class="type-row" id="tr-${t.id}">
+              ${typeEditingId === t.id
+                ? `<input type="color" id="ec-${t.id}" value="${t.color}" />
+                   <input type="text" id="en-${t.id}" value="${escHtml(t.name)}" />
+                   <button class="btn-save" style="font-size:12px;padding:3px 10px;" onclick="saveType('${t.id}')">Kaydet</button>
+                   <button class="btn-cancel" style="font-size:12px;padding:3px 10px;" onclick="cancelTypeEdit()">İptal</button>`
+                : `<span style="width:18px;height:18px;border-radius:50%;background:${t.color};display:inline-block;flex-shrink:0"></span>
+                   <span style="flex:1">${escHtml(t.name)}</span>
+                   <button style="font-size:12px;border:1px solid var(--border);border-radius:4px;padding:2px 7px;" onclick="startTypeEdit('${t.id}')">✏</button>
+                   <button class="type-del-btn" onclick="deleteType('${t.id}')">🗑</button>
+                   <span class="type-warn" id="tw-${t.id}"></span>`
+              }
+            </div>`).join('')}
+        </div>
+        <div class="type-add-row">
+          <input type="color" id="new-type-color" value="#64748b" />
+          <input type="text" id="new-type-name" placeholder="Yeni tip adı..." />
+          <button class="btn-add-type" onclick="addType()">+ Ekle</button>
+        </div>
+        <span class="type-warn" id="add-type-error"></span>
+      `;
+    }
+
+    function setModalTab(tab) { modalTab = tab; typeEditingId = null; renderModal(); }
+    function startTypeEdit(id) { typeEditingId = id; renderModal(); }
+    function cancelTypeEdit() { typeEditingId = null; renderModal(); }
+
+    function addType() {
+      const name = document.getElementById('new-type-name').value.trim();
+      const color = document.getElementById('new-type-color').value;
+      const errEl = document.getElementById('add-type-error');
+      if (!name) { errEl.textContent = 'Tip adı boş olamaz.'; return; }
+      const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
+      if (types.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+        errEl.textContent = 'Bu isimde bir tip zaten var.'; return;
+      }
+      types.push({ id: uuid(), name, color });
+      saveState();
+      renderModal();
+      renderContent();
+    }
+
+    function saveType(id) {
+      const name = document.getElementById(`en-${id}`).value.trim();
+      const color = document.getElementById(`ec-${id}`).value;
+      const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
+      if (!name) {
+        const errEl = document.getElementById(`tw-${id}`);
+        if (errEl) errEl.textContent = 'Ad boş olamaz.';
+        return;
+      }
+      const type = types.find(t => t.id === id);
+      if (type) { type.name = name; type.color = color; }
+      saveState();
+      typeEditingId = null;
+      renderModal();
+      renderContent();
+    }
+
+    function deleteType(id) {
+      const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
+      const allItems = Object.values(state.months).flatMap(m =>
+        modalTab === 'income' ? m.incomes : m.expenses
+      );
+      const inUse = allItems.filter(i => i.typeId === id).length;
+      const errEl = document.getElementById(`tw-${id}`);
+      if (inUse > 0) {
+        if (errEl) errEl.textContent = `${inUse} kalem bu tipi kullanıyor. Önce kalemleri güncelleyin.`;
+        return;
+      }
+      const idx = types.findIndex(t => t.id === id);
+      if (idx !== -1) types.splice(idx, 1);
+      saveState();
+      renderModal();
+      renderContent();
+    }
+
     // ── Init ───────────────────────────────────────────────────
     function init() {
       initState();
@@ -441,6 +556,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', init);
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.getElementById('btn-types').addEventListener('click', openTypesModal);
   </script>
 </body>
 </html>
