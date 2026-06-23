@@ -315,6 +315,14 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function onTypeChange(select) {
+      const typeId = select.value;
+      const types = editingState && editingState.kind === 'income' ? state.incomeTypes : state.expenseTypes;
+      const type = types.find(t => t.id === typeId);
+      const nameInput = document.getElementById('ef-name');
+      if (type && nameInput) nameInput.value = type.name;
+    }
+
     function safeColor(c) {
       return /^#[0-9a-fA-F]{6}$/.test(String(c)) ? c : '#64748b';
     }
@@ -326,7 +334,7 @@
           <div class="edit-fields">
             <input id="ef-name" type="text" value="${escHtml(item.name)}" placeholder="Ad" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
             <input id="ef-amount" type="number" min="0" step="0.01" value="${item.amount}" placeholder="Tutar" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
-            <select id="ef-type">${opts}</select>
+            <select id="ef-type" onchange="onTypeChange(this)">${opts}</select>
           </div>
           <textarea id="ef-note" placeholder="Açıklama (opsiyonel)">${escHtml(item.note || '')}</textarea>
           <div class="edit-actions">
@@ -346,7 +354,7 @@
       const items = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'];
       items.push({
         id: uuid(),
-        name: kind === 'income' ? 'Yeni Gelir' : 'Yeni Gider',
+        name: defaultType ? defaultType.name : (kind === 'income' ? 'Yeni Gelir' : 'Yeni Gider'),
         amount: 0,
         typeId: defaultType ? defaultType.id : null,
         note: '',
