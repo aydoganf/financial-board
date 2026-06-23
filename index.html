@@ -223,9 +223,25 @@
       const remaining = totalIncome - totalExpense;
       const remainColor = remaining >= 0 ? 'var(--remaining)' : 'var(--expense)';
       const monthLabel = `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
+      const isEmpty = !monthData.incomes.length && !monthData.expenses.length;
+      const sourceMonths = Object.keys(state.months)
+        .filter(k => k !== activeMonth && (state.months[k].incomes.length || state.months[k].expenses.length))
+        .sort((a, b) => b.localeCompare(a));
+      const cloneUI = isEmpty && sourceMonths.length ? `
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:var(--text-muted)">Klonla:</span>
+          <select id="clone-select" style="font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:5px;padding:4px 8px;background:#fff;color:var(--text);">
+            <option value="">— ay seç —</option>
+            ${sourceMonths.map(k => {
+              const [ky, km] = k.split('-');
+              return `<option value="${k}">${MONTHS[parseInt(km,10)-1]} ${ky}</option>`;
+            }).join('')}
+          </select>
+          <button onclick="cloneMonth()" style="font-size:13px;background:#2563eb;color:#fff;border-radius:5px;padding:4px 12px;">Klonla</button>
+        </div>` : '';
 
       content.innerHTML = `
-        <h2 style="font-size:18px;margin-bottom:16px;">${monthLabel}</h2>
+        <h2 style="font-size:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">${monthLabel}${cloneUI}</h2>
         <div id="summary-strip">
           <div class="stat-card">
             <div class="label">Toplam Gelir</div>
@@ -343,6 +359,19 @@
             <span class="edit-error" id="ef-error"></span>
           </div>
         </div>`;
+    }
+
+    function cloneMonth() {
+      const srcKey = document.getElementById('clone-select').value;
+      if (!srcKey) return;
+      const src = state.months[srcKey];
+      if (!src) return;
+      state.months[activeMonth] = {
+        incomes: src.incomes.map(i => ({ ...i, id: uuid(), _isNew: false })),
+        expenses: src.expenses.map(i => ({ ...i, id: uuid(), _isNew: false })),
+      };
+      saveState();
+      renderContent();
     }
 
     function addItem(kind) {
