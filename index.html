@@ -54,6 +54,17 @@
     .item-actions button { padding: 3px 7px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); }
     .item-actions button:hover { background: var(--bg); }
     .item-note { font-size: 11px; color: var(--text-muted); padding: 0 16px 8px 52px; border-top: none; }
+    .item-edit-row { padding: 10px 16px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
+    .item-edit-row .edit-fields { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .item-edit-row input, .item-edit-row select, .item-edit-row textarea { font-family: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; background: #fff; }
+    .item-edit-row input { width: 160px; }
+    .item-edit-row input[type=number] { width: 110px; }
+    .item-edit-row select { width: 140px; }
+    .item-edit-row textarea { width: 100%; height: 48px; resize: none; }
+    .edit-error { color: var(--expense); font-size: 12px; }
+    .edit-actions { display: flex; gap: 8px; }
+    .btn-save { background: #2563eb; color: #fff; border-radius: 5px; padding: 5px 14px; font-size: 13px; }
+    .btn-cancel { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 5px 14px; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -98,6 +109,7 @@
     let activeMonth = null; // "YYYY-MM"
     let openYears = new Set(); // tracks which year groups are expanded
     let openSections = new Set(['incomes', 'expenses']); // both open by default
+    let editingState = null; // { kind: 'income'|'expense', idx: number } | null
 
     function loadState() {
       try {
@@ -220,7 +232,7 @@
             <span class="section-total" style="color:var(--income)">${fmt(totalIncome)}</span>
           </div>
           <div class="section-body" id="section-incomes" style="display:${openSections.has('incomes') ? 'block' : 'none'}">
-            ${renderItemList(monthData.incomes, 'income')}
+            ${renderItemList(monthData.incomes, 'income', editingState && editingState.kind === 'income' ? editingState.idx : -1)}
             <div style="padding:10px 16px;">
               <button onclick="addItem('income')" style="font-size:13px;color:var(--income);border:1px dashed var(--income);border-radius:6px;padding:6px 12px;">+ Yeni Gelir Ekle</button>
             </div>
@@ -233,7 +245,7 @@
             <span class="section-total" style="color:var(--expense)">${fmt(totalExpense)}</span>
           </div>
           <div class="section-body" id="section-expenses" style="display:${openSections.has('expenses') ? 'block' : 'none'}">
-            ${renderItemList(monthData.expenses, 'expense')}
+            ${renderItemList(monthData.expenses, 'expense', editingState && editingState.kind === 'expense' ? editingState.idx : -1)}
             <div style="padding:10px 16px;">
               <button onclick="addItem('expense')" style="font-size:13px;color:var(--expense);border:1px dashed var(--expense);border-radius:6px;padding:6px 12px;">+ Yeni Gider Ekle</button>
             </div>
@@ -289,7 +301,21 @@
     }
 
     function renderEditRow(item, kind, idx, types) {
-      return ''; // TODO Task 6
+      const opts = types.map(t => `<option value="${t.id}"${t.id === item.typeId ? ' selected' : ''}>${escHtml(t.name)}</option>`).join('');
+      return `
+        <div class="item-edit-row" id="edit-row-${kind}-${idx}">
+          <div class="edit-fields">
+            <input id="ef-name" type="text" value="${escHtml(item.name)}" placeholder="Ad" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
+            <input id="ef-amount" type="number" min="0" step="0.01" value="${item.amount}" placeholder="Tutar" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
+            <select id="ef-type">${opts}</select>
+          </div>
+          <textarea id="ef-note" placeholder="Açıklama (opsiyonel)">${escHtml(item.note || '')}</textarea>
+          <div class="edit-actions">
+            <button class="btn-save" onclick="saveItem('${kind}', ${idx})">Kaydet</button>
+            <button class="btn-cancel" onclick="cancelEdit('${kind}', ${idx})">İptal</button>
+            <span class="edit-error" id="ef-error"></span>
+          </div>
+        </div>`;
     }
 
     function addItem(kind) {
@@ -317,7 +343,41 @@
     }
 
     function editItem(kind, idx) {
-      // TODO Task 6
+      editingState = { kind, idx };
+      renderContent();
+      const row = document.getElementById(`edit-row-${kind}-${idx}`);
+      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const nameInput = document.getElementById('ef-name');
+      if (nameInput) nameInput.focus();
+    }
+
+    function saveItem(kind, idx) {
+      const name = document.getElementById('ef-name').value.trim();
+      const amountRaw = document.getElementById('ef-amount').value;
+      const amount = parseFloat(amountRaw);
+      const typeId = document.getElementById('ef-type').value;
+      const note = document.getElementById('ef-note').value.trim();
+      const errEl = document.getElementById('ef-error');
+
+      if (!name) { errEl.textContent = 'Ad boş bırakılamaz.'; return; }
+      if (isNaN(amount) || amount < 0) { errEl.textContent = 'Geçerli bir tutar girin (≥ 0).'; return; }
+
+      const key = kind === 'income' ? 'incomes' : 'expenses';
+      state.months[activeMonth][key][idx] = { ...state.months[activeMonth][key][idx], name, amount, typeId, note };
+      saveState();
+      editingState = null;
+      renderContent();
+    }
+
+    function cancelEdit(kind, idx) {
+      const key = kind === 'income' ? 'incomes' : 'expenses';
+      const item = state.months[activeMonth][key][idx];
+      if (item.amount === 0 && (item.name === 'Yeni Gelir' || item.name === 'Yeni Gider')) {
+        state.months[activeMonth][key].splice(idx, 1);
+        saveState();
+      }
+      editingState = null;
+      renderContent();
     }
 
     // Drag & Drop stubs — full implementation in Task 7
