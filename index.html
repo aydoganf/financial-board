@@ -283,7 +283,7 @@
         const noteHtml = item.note ? `<div class="item-note">${escHtml(item.note)}</div>` : '';
         return `
           <div class="item-row" draggable="true" data-kind="${kind}" data-idx="${idx}"
-               ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+               ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
             <span class="drag-handle">⠿</span>
             <span class="type-badge" style="color:${badgeColor};background:${badgeBg}">${escHtml(badgeName)}</span>
             <span class="item-name">${escHtml(item.name)}</span>
@@ -380,11 +380,54 @@
       renderContent();
     }
 
-    // Drag & Drop stubs — full implementation in Task 7
-    function onDragStart(e) {}
-    function onDragOver(e) { e.preventDefault(); }
-    function onDrop(e) {}
-    function onDragEnd(e) {}
+    // Drag & Drop
+    let dragSrcKind = null;
+    let dragSrcIdx = null;
+
+    function onDragStart(e) {
+      dragSrcKind = e.currentTarget.dataset.kind;
+      dragSrcIdx = parseInt(e.currentTarget.dataset.idx, 10);
+      e.currentTarget.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      const target = e.currentTarget;
+      if (target.dataset.kind !== dragSrcKind) {
+        e.dataTransfer.dropEffect = 'none';
+        return;
+      }
+      e.dataTransfer.dropEffect = 'move';
+      target.style.borderTop = '2px solid var(--remaining)';
+    }
+
+    function onDrop(e) {
+      e.preventDefault();
+      const target = e.currentTarget;
+      target.style.borderTop = '';
+      if (dragSrcKind === null) return;
+      if (target.dataset.kind !== dragSrcKind) return;
+      const destIdx = parseInt(target.dataset.idx, 10);
+      if (destIdx === dragSrcIdx) return;
+      const key = dragSrcKind === 'income' ? 'incomes' : 'expenses';
+      const items = state.months[activeMonth][key];
+      const [moved] = items.splice(dragSrcIdx, 1);
+      items.splice(destIdx, 0, moved);
+      saveState();
+      renderContent();
+    }
+
+    function onDragEnd(e) {
+      e.currentTarget.style.opacity = '';
+      e.currentTarget.style.borderTop = '';
+      dragSrcKind = null;
+      dragSrcIdx = null;
+    }
+
+    function onDragLeave(e) {
+      e.currentTarget.style.borderTop = '';
+    }
 
     // ── Init ───────────────────────────────────────────────────
     function init() {
