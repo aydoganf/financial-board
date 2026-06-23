@@ -44,6 +44,16 @@
     .section-header .section-title { font-size: 14px; font-weight: 700; flex: 1; }
     .section-header .section-total { font-size: 14px; font-weight: 600; }
     .section-body { border-top: 1px solid var(--border); }
+    .item-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--border); font-size: 13px; transition: background .1s; }
+    .item-row:hover { background: #f8fafc; }
+    .drag-handle { color: #cbd5e1; cursor: grab; font-size: 16px; flex-shrink: 0; user-select: none; }
+    .type-badge { border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .item-name { flex: 1; font-size: 13px; }
+    .item-amount { font-weight: 600; font-size: 13px; flex-shrink: 0; width: 100px; text-align: right; }
+    .item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .item-actions button { padding: 3px 7px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); }
+    .item-actions button:hover { background: var(--bg); }
+    .item-note { font-size: 11px; color: var(--text-muted); padding: 0 16px 8px 52px; border-top: none; }
   </style>
 </head>
 <body>
@@ -246,9 +256,70 @@
       if (open) openSections.delete(id); else openSections.add(id);
     }
 
-    // TODO Task 5: replace with actual item rows
-    function renderItemList(items, kind) {
-      return `<p style="padding:12px 16px;color:var(--text-muted);font-size:13px;">Henüz kalem yok.</p>`;
+    function renderItemList(items, kind, editingIdx = -1) {
+      if (!items.length && editingIdx === -1) {
+        return `<p style="padding:12px 16px;color:var(--text-muted);font-size:13px;">Henüz kalem yok.</p>`;
+      }
+      const types = kind === 'income' ? state.incomeTypes : state.expenseTypes;
+      const amtColor = kind === 'income' ? 'var(--income)' : 'var(--expense)';
+      return items.map((item, idx) => {
+        if (idx === editingIdx) return renderEditRow(item, kind, idx, types);
+        const type = types.find(t => t.id === item.typeId);
+        const badgeColor = type ? type.color : '#64748b';
+        const badgeBg = badgeColor + '20';
+        const badgeName = type ? type.name : '—';
+        const noteHtml = item.note ? `<div class="item-note">${escHtml(item.note)}</div>` : '';
+        return `
+          <div class="item-row" draggable="true" data-kind="${kind}" data-idx="${idx}"
+               ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+            <span class="drag-handle">⠿</span>
+            <span class="type-badge" style="color:${badgeColor};background:${badgeBg}">${escHtml(badgeName)}</span>
+            <span class="item-name">${escHtml(item.name)}</span>
+            <span class="item-amount" style="color:${amtColor}">${fmt(item.amount)}</span>
+            <div class="item-actions">
+              <button onclick="editItem('${kind}', ${idx})">✏</button>
+              <button onclick="deleteItem('${kind}', ${idx})" style="color:var(--expense)">🗑</button>
+            </div>
+          </div>${noteHtml}`;
+      }).join('');
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderEditRow(item, kind, idx, types) {
+      return ''; // TODO Task 6
+    }
+
+    function addItem(kind) {
+      const types = kind === 'income' ? state.incomeTypes : state.expenseTypes;
+      const defaultType = types[0] || null;
+      const items = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'];
+      items.push({
+        id: uuid(),
+        name: kind === 'income' ? 'Yeni Gelir' : 'Yeni Gider',
+        amount: 0,
+        typeId: defaultType ? defaultType.id : null,
+        note: '',
+        order: items.length,
+      });
+      saveState();
+      renderContent();
+      // open edit immediately for the new item
+      const newIdx = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'].length - 1;
+      editItem(kind, newIdx);
+    }
+
+    function deleteItem(kind, idx) {
+      const key = kind === 'income' ? 'incomes' : 'expenses';
+      state.months[activeMonth][key].splice(idx, 1);
+      saveState();
+      renderContent();
+    }
+
+    function editItem(kind, idx) {
+      // TODO Task 6
     }
 
     // ── Init ───────────────────────────────────────────────────
