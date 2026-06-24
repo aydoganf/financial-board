@@ -179,9 +179,15 @@
     // ── Render: Sidebar ────────────────────────────────────────
     function renderSidebar() {
       const sidebar = document.getElementById('sidebar');
-      const maxYear = new Date().getFullYear() + 5;
+      const currentYear = new Date().getFullYear();
+      const maxYear = currentYear + 5;
       let html = '';
       for (let y = maxYear; y >= 2020; y--) {
+        const isPast = y < currentYear;
+        if (isPast) {
+          const hasData = Object.keys(state.months).some(k => k.startsWith(`${y}-`));
+          if (!hasData) continue;
+        }
         const isOpen = openYears.has(y);
         const isYearActive = activeYearView === y;
         html += `<div class="year-group">
