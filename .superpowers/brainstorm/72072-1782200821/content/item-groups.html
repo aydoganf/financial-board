@@ -1,0 +1,64 @@
+<h2>Gelir/Gider Kalemleri Nasıl Gruplanacak?</h2>
+<p class="subtitle">Her kalem bir "tip"e bağlı. Tipler listelerin başlığı/grubu olacak.</p>
+
+<div class="cards">
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d1117;border-radius:8px;padding:12px;font-size:11px;color:#ccc;font-family:sans-serif">
+        <div style="color:#4ade80;font-weight:bold;margin-bottom:6px;font-size:12px">▼ GELİRLER</div>
+        <div style="background:#111827;border-radius:4px;margin-bottom:4px;overflow:hidden">
+          <div style="background:#1f2937;padding:5px 8px;color:#93c5fd;font-size:10px;font-weight:bold">📌 Düzenli Gelir</div>
+          <div style="padding:4px 8px;display:flex;justify-content:space-between;font-size:10px"><span>≡ Maaş</span><span style="color:#4ade80">₺15.000</span></div>
+          <div style="padding:4px 8px;display:flex;justify-content:space-between;font-size:10px"><span>≡ İkramiye</span><span style="color:#4ade80">₺2.000</span></div>
+        </div>
+        <div style="background:#111827;border-radius:4px;margin-bottom:8px;overflow:hidden">
+          <div style="background:#1f2937;padding:5px 8px;color:#fbbf24;font-size:10px;font-weight:bold">💼 Yan Gelir</div>
+          <div style="padding:4px 8px;display:flex;justify-content:space-between;font-size:10px"><span>≡ Danışmanlık</span><span style="color:#4ade80">₺3.500</span></div>
+        </div>
+        <div style="color:#f87171;font-weight:bold;margin-bottom:6px;font-size:12px">▼ GİDERLER</div>
+        <div style="background:#111827;border-radius:4px;overflow:hidden">
+          <div style="background:#1f2937;padding:5px 8px;color:#fb923c;font-size:10px;font-weight:bold">🏠 Konut</div>
+          <div style="padding:4px 8px;display:flex;justify-content:space-between;font-size:10px"><span>≡ Kira</span><span style="color:#f87171">₺8.000</span></div>
+          <div style="padding:4px 8px;display:flex;justify-content:space-between;font-size:10px"><span>≡ Aidat</span><span style="color:#f87171">₺450</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Tip Başlıklı Gruplar</h3>
+      <p>Her tip bir grup başlığı, altında o tipe ait kalemler sıralanır. Drag & drop grup içinde ve gruplar arası çalışır.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d1117;border-radius:8px;padding:12px;font-size:11px;color:#ccc;font-family:sans-serif">
+        <div style="color:#4ade80;font-weight:bold;margin-bottom:6px;font-size:12px">▼ GELİRLER</div>
+        <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">
+          <div style="background:#111827;border-radius:3px;padding:4px 8px;display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px"><span>≡</span><span style="background:#1d4ed8;border-radius:2px;padding:1px 4px;font-size:8px">Düzenli</span><span>Maaş</span></div>
+            <span style="color:#4ade80">₺15.000</span>
+          </div>
+          <div style="background:#111827;border-radius:3px;padding:4px 8px;display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px"><span>≡</span><span style="background:#92400e;border-radius:2px;padding:1px 4px;font-size:8px">Yan Gelir</span><span>Danışmanlık</span></div>
+            <span style="color:#4ade80">₺3.500</span>
+          </div>
+          <div style="background:#111827;border-radius:3px;padding:4px 8px;display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px"><span>≡</span><span style="background:#1d4ed8;border-radius:2px;padding:1px 4px;font-size:8px">Düzenli</span><span>İkramiye</span></div>
+            <span style="color:#4ade80">₺2.000</span>
+          </div>
+        </div>
+        <div style="color:#f87171;font-weight:bold;margin-bottom:6px;font-size:12px">▼ GİDERLER</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="background:#111827;border-radius:3px;padding:4px 8px;display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:6px"><span>≡</span><span style="background:#7c2d12;border-radius:2px;padding:1px 4px;font-size:8px">Konut</span><span>Kira</span></div>
+            <span style="color:#f87171">₺8.000</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Flat Liste + Tip Etiketi</h3>
+      <p>Tüm kalemler düz sıralanır, her kalemin yanında renkli tip etiketi var. Gruplama görsel, fiziksel bölme yok.</p>
+    </div>
+  </div>
+</div>
