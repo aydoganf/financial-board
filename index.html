@@ -192,7 +192,11 @@
         for (let m = 0; m < 12; m++) {
           const key = `${y}-${String(m + 1).padStart(2, '0')}`;
           const isActive = key === activeMonth;
-          html += `<button class="month-btn${isActive ? ' active' : ''}" onclick="selectMonth('${key}')">${MONTHS[m]}</button>`;
+          const data = state.months[key];
+          const hasDot = data && (data.incomes.length || data.expenses.length);
+          html += `<button class="month-btn${isActive ? ' active' : ''}" onclick="selectMonth('${key}')" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>${MONTHS[m]}</span>${hasDot ? '<span style="width:6px;height:6px;border-radius:50%;background:var(--remaining);flex-shrink:0;"></span>' : ''}
+          </button>`;
         }
         html += `</div></div>`;
       }
