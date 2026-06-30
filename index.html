@@ -303,7 +303,64 @@
             </div>
           </div>
         </div>
+        <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+          ${renderPieChart(monthData.incomes, state.incomeTypes, 'Gelir Dağılımı', 'var(--income)')}
+          ${renderPieChart(monthData.expenses, state.expenseTypes, 'Gider Dağılımı', 'var(--expense)')}
+        </div>
       `;
+    }
+
+    function renderPieChart(items, types, title, accentColor) {
+      const groups = {};
+      for (const item of items) {
+        if (!item.amount) continue;
+        const type = types.find(t => t.id === item.typeId);
+        const label = type ? type.name : '—';
+        const color = type ? safeColor(type.color) : '#64748b';
+        const key = item.typeId || '__none__';
+        if (!groups[key]) groups[key] = { label, color, total: 0 };
+        groups[key].total += item.amount;
+      }
+      const slices = Object.values(groups).filter(g => g.total > 0);
+      const grand = slices.reduce((s, g) => s + g.total, 0);
+
+      if (!slices.length) return `
+        <div class="section-card" style="flex:1;min-width:200px;padding:16px;">
+          <div style="font-size:12px;font-weight:600;color:${accentColor};text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;">${title}</div>
+          <p style="font-size:13px;color:var(--text-muted);">Veri yok.</p>
+        </div>`;
+
+      const cx = 80, cy = 80, r = 64;
+      let angle = -Math.PI / 2;
+      const paths = slices.map(g => {
+        const slice = (g.total / grand) * 2 * Math.PI;
+        const x1 = cx + r * Math.cos(angle);
+        const y1 = cy + r * Math.sin(angle);
+        angle += slice;
+        const x2 = cx + r * Math.cos(angle);
+        const y2 = cy + r * Math.sin(angle);
+        const large = slice > Math.PI ? 1 : 0;
+        return `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${g.color}" stroke="#fff" stroke-width="2"/>`;
+      }).join('');
+
+      const legend = slices.map(g => {
+        const pct = ((g.total / grand) * 100).toFixed(1);
+        return `<div style="display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:5px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:${g.color};flex-shrink:0;"></span>
+          <span style="flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(g.label)}">${escHtml(g.label)}</span>
+          <span style="color:var(--text-muted);white-space:nowrap;">${pct}%</span>
+          <span style="color:var(--text);font-weight:600;white-space:nowrap;">${fmt(g.total)}</span>
+        </div>`;
+      }).join('');
+
+      return `
+        <div class="section-card" style="flex:1;min-width:260px;padding:16px;">
+          <div style="font-size:12px;font-weight:600;color:${accentColor};text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;">${title}</div>
+          <div style="display:flex;gap:16px;align-items:center;">
+            <svg width="160" height="160" viewBox="0 0 160 160" style="flex-shrink:0;">${paths}</svg>
+            <div style="flex:1;min-width:0;">${legend}</div>
+          </div>
+        </div>`;
     }
 
     function renderYearView(y) {
