@@ -418,12 +418,19 @@
 
     function renderEditRow(item, kind, idx, types) {
       const opts = types.map(t => `<option value="${t.id}"${t.id === item.typeId ? ' selected' : ''}>${escHtml(t.name)}</option>`).join('');
+      const periodField = item._isNew ? `
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted);">
+              <span>Periyot</span>
+              <input id="ef-period" type="number" min="1" max="60" value="1" style="width:60px;" title="Kaç aya eklensin?" />
+              <span>ay</span>
+            </label>` : '';
       return `
         <div class="item-edit-row" id="edit-row-${kind}-${idx}">
           <div class="edit-fields">
             <input id="ef-name" type="text" value="${escHtml(item.name)}" placeholder="Ad" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
             <input id="ef-amount" type="number" min="0" step="0.01" value="${item.amount}" placeholder="Tutar" onkeydown="if(event.key==='Enter')saveItem('${kind}',${idx})" />
             <select id="ef-type" onchange="onTypeChange(this)">${opts}</select>
+            ${periodField}
           </div>
           <textarea id="ef-note" placeholder="Açıklama (opsiyonel)">${escHtml(item.note || '')}</textarea>
           <div class="edit-actions">
@@ -487,15 +494,33 @@
       const amount = parseFloat(amountRaw);
       const typeId = document.getElementById('ef-type').value;
       const note = document.getElementById('ef-note').value.trim();
+      const periodEl = document.getElementById('ef-period');
+      const period = periodEl ? Math.max(1, parseInt(periodEl.value, 10) || 1) : 1;
       const errEl = document.getElementById('ef-error');
 
       if (!name) { errEl.textContent = 'Ad boş bırakılamaz.'; return; }
       if (isNaN(amount) || amount < 0) { errEl.textContent = 'Geçerli bir tutar girin (≥ 0).'; return; }
 
       const key = kind === 'income' ? 'incomes' : 'expenses';
-      state.months[activeMonth][key][idx] = { ...state.months[activeMonth][key][idx], name, amount, typeId, note, _isNew: false };
+      const baseItem = { ...state.months[activeMonth][key][idx], name, amount, typeId, note, _isNew: false };
+      state.months[activeMonth][key][idx] = baseItem;
+
+      // Add to subsequent months if period > 1
+      if (period > 1) {
+        const [y, m] = activeMonth.split('-').map(Number);
+        for (let i = 1; i < period; i++) {
+          const totalMonths = (m - 1) + i;
+          const ny = y + Math.floor(totalMonths / 12);
+          const nm = (totalMonths % 12) + 1;
+          const nextKey = `${ny}-${String(nm).padStart(2, '0')}`;
+          ensureMonth(nextKey);
+          state.months[nextKey][key].push({ ...baseItem, id: uuid() });
+        }
+      }
+
       saveState();
       editingState = null;
+      renderSidebar();
       renderContent();
     }
 
