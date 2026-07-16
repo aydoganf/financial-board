@@ -83,6 +83,9 @@
 <body>
   <div id="topbar">
     <h1>💰 Finansal Pano</h1>
+    <button id="btn-export" class="btn-secondary">⬇ Dışa Aktar</button>
+    <button id="btn-import" class="btn-secondary">⬆ İçe Aktar</button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none">
     <button id="btn-types" class="btn-secondary">⚙ Tipler</button>
   </div>
   <div id="main">
@@ -764,6 +767,43 @@
         if (e.target === this) closeModal();
       });
       document.getElementById('btn-types').addEventListener('click', openTypesModal);
+      document.getElementById('btn-export').addEventListener('click', exportData);
+      document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file-input').click());
+      document.getElementById('import-file-input').addEventListener('change', importData);
+    }
+
+    function exportData() {
+      const json = JSON.stringify(state, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'finansal-pano.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (!parsed.incomeTypes || !parsed.expenseTypes || !parsed.months) {
+            alert('Geçersiz dosya formatı. Lütfen doğru bir finansal pano JSON dosyası seçin.');
+            return;
+          }
+          state = parsed;
+          saveState();
+          renderSidebar();
+          renderContent();
+        } catch {
+          alert('Dosya okunamadı. Geçerli bir JSON dosyası seçin.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
     }
 
     document.addEventListener('DOMContentLoaded', init);
