@@ -78,6 +78,51 @@
     .type-del-btn { color: var(--expense); font-size: 13px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
     .type-warn { color: var(--expense); font-size: 11px; margin-top: 2px; }
     .modal-close { float: right; font-size: 18px; color: var(--text-muted); background: none; border: none; cursor: pointer; }
+    #btn-menu { display: none; }
+
+    /* ── Mobile (≤ 640px) ──────────────────────────────────────── */
+    @media (max-width: 640px) {
+      #btn-menu { display: flex; }
+
+      #topbar .btn-label { display: none; }
+
+      #sidebar {
+        position: fixed;
+        top: 52px;
+        left: calc(-1 * var(--sidebar-w));
+        height: calc(100vh - 52px);
+        z-index: 200;
+        transition: left .25s ease;
+        box-shadow: 2px 0 12px rgba(0,0,0,.15);
+      }
+      body.drawer-open #sidebar { left: 0; }
+      body.drawer-open { overflow: hidden; }
+
+      #drawer-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 199;
+        background: rgba(0,0,0,.35);
+      }
+      body.drawer-open #drawer-backdrop { display: block; }
+
+      #modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+
+      #summary-strip { flex-direction: column; }
+
+      .item-edit-row input,
+      .item-edit-row input[type=number],
+      .item-edit-row select { width: 100%; }
+
+      .pie-chart-wrap { width: 100%; }
+    }
   </style>
 </head>
 <body>
