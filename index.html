@@ -111,7 +111,8 @@
         width: 100%;
         max-width: 100%;
         height: 100vh;
-        max-height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
         border-radius: 0;
       }
 
@@ -824,11 +825,17 @@
     }
 
     function toggleDrawer() {
-      document.body.classList.toggle('drawer-open');
+      const open = document.body.classList.toggle('drawer-open');
+      const btn = document.getElementById('btn-menu');
+      btn.setAttribute('aria-expanded', open);
+      btn.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
     }
 
     function closeDrawer() {
       document.body.classList.remove('drawer-open');
+      const btn = document.getElementById('btn-menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Menüyü aç');
     }
 
     function exportData() {
