@@ -269,6 +269,7 @@
     }
 
     function selectMonth(key) {
+      closeDrawer();
       activeMonth = key;
       activeYearView = null;
       ensureMonth(key);
@@ -277,6 +278,7 @@
     }
 
     function selectYearView(y) {
+      closeDrawer();
       activeYearView = y;
       activeMonth = null;
       renderSidebar();
@@ -817,6 +819,16 @@
       document.getElementById('btn-export').addEventListener('click', exportData);
       document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file-input').click());
       document.getElementById('import-file-input').addEventListener('change', importData);
+      document.getElementById('btn-menu').addEventListener('click', toggleDrawer);
+      document.getElementById('drawer-backdrop').addEventListener('click', closeDrawer);
+    }
+
+    function toggleDrawer() {
+      document.body.classList.toggle('drawer-open');
+    }
+
+    function closeDrawer() {
+      document.body.classList.remove('drawer-open');
     }
 
     function exportData() {
