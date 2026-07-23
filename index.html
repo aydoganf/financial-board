@@ -827,7 +827,7 @@
     function toggleDrawer() {
       const open = document.body.classList.toggle('drawer-open');
       const btn = document.getElementById('btn-menu');
-      btn.setAttribute('aria-expanded', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       btn.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
     }
 
