@@ -127,12 +127,14 @@
 </head>
 <body>
   <div id="topbar">
+    <button id="btn-menu" aria-label="Menüyü aç" style="font-size:20px;padding:4px 8px;">☰</button>
     <h1>💰 Finansal Pano</h1>
-    <button id="btn-export" class="btn-secondary">⬇ Dışa Aktar</button>
-    <button id="btn-import" class="btn-secondary">⬆ İçe Aktar</button>
+    <button id="btn-export" class="btn-secondary">⬇ <span class="btn-label">Dışa Aktar</span></button>
+    <button id="btn-import" class="btn-secondary">⬆ <span class="btn-label">İçe Aktar</span></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
-    <button id="btn-types" class="btn-secondary">⚙ Tipler</button>
+    <button id="btn-types" class="btn-secondary">⚙ <span class="btn-label">Tipler</span></button>
   </div>
+  <div id="drawer-backdrop"></div>
   <div id="main">
     <nav id="sidebar"></nav>
     <main id="content"></main>
