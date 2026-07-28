@@ -809,13 +809,6 @@
 
     // ── Init ───────────────────────────────────────────────────
     function init() {
-      initState();
-      const now = new Date();
-      activeMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      openYears.add(now.getFullYear());
-      ensureMonth(activeMonth);
-      renderSidebar();
-      renderContent();
       document.getElementById('modal-overlay').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
       });
@@ -828,6 +821,26 @@
       document.getElementById('btn-sync-pull').addEventListener('click', syncFromRemote);
       document.getElementById('btn-sync-push').addEventListener('click', syncToRemote);
       document.getElementById('btn-clear').addEventListener('click', clearStorage);
+
+      try {
+        initState();
+        const now = new Date();
+        activeMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        openYears.add(now.getFullYear());
+        ensureMonth(activeMonth);
+        renderSidebar();
+        renderContent();
+      } catch (e) {
+        console.error('Init error:', e);
+        document.getElementById('content').innerHTML =
+          `<div style="padding:32px;color:var(--expense)">
+            <strong>Veri yüklenemedi.</strong> localStorage bozulmuş olabilir.
+            <br><br>
+            <button onclick="clearStorage()" style="background:var(--expense);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:14px;">
+              🗑 Veriyi Temizle ve Başa Dön
+            </button>
+          </div>`;
+      }
     }
 
     function toggleDrawer() {
