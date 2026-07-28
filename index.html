@@ -222,6 +222,7 @@
     let editingState = null; // { kind: 'income'|'expense', idx: number } | null
     let modalTab = 'income'; // 'income' | 'expense'
     let typeEditingId = null;
+    let settingsSection = 'types'; // 'types' | 'remote'
 
     function loadState() {
       try {
@@ -754,9 +755,9 @@
       typeEditingId = null;
     }
 
-    function renderModal() {
+    function renderModal(containerId) {
       const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
-      const modal = document.getElementById('modal');
+      const modal = document.getElementById(containerId || 'modal');
       modal.innerHTML = `
         <button class="modal-close" onclick="closeModal()">✕</button>
         <h3 style="font-size:16px;margin-bottom:14px;">Tip Yönetimi</h3>
@@ -790,9 +791,14 @@
       `;
     }
 
-    function setModalTab(tab) { modalTab = tab; typeEditingId = null; renderModal(); }
-    function startTypeEdit(id) { typeEditingId = id; renderModal(); }
-    function cancelTypeEdit() { typeEditingId = null; renderModal(); }
+    function activeContainer() {
+      return (settingsSection === 'types' && document.getElementById('settings-overlay').classList.contains('open'))
+        ? 'settings-content' : 'modal';
+    }
+
+    function setModalTab(tab) { modalTab = tab; typeEditingId = null; renderModal(activeContainer()); }
+    function startTypeEdit(id) { typeEditingId = id; renderModal(activeContainer()); }
+    function cancelTypeEdit() { typeEditingId = null; renderModal(activeContainer()); }
 
     function addType() {
       const name = document.getElementById('new-type-name').value.trim();
@@ -805,7 +811,7 @@
       }
       types.push({ id: uuid(), name, color });
       saveState();
-      renderModal();
+      renderModal(activeContainer());
       renderContent();
     }
 
@@ -827,7 +833,7 @@
       if (type) { type.name = name; type.color = color; }
       saveState();
       typeEditingId = null;
-      renderModal();
+      renderModal(activeContainer());
       renderContent();
     }
 
@@ -845,7 +851,7 @@
       const idx = types.findIndex(t => t.id === id);
       if (idx !== -1) types.splice(idx, 1);
       saveState();
-      renderModal();
+      renderModal(activeContainer());
       renderContent();
     }
 
@@ -854,7 +860,10 @@
       document.getElementById('modal-overlay').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
       });
-      document.getElementById('btn-types').addEventListener('click', openTypesModal);
+      document.getElementById('settings-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closeSettings();
+      });
+      document.getElementById('btn-settings').addEventListener('click', openSettings);
       document.getElementById('btn-export').addEventListener('click', exportData);
       document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file-input').click());
       document.getElementById('import-file-input').addEventListener('change', importData);
@@ -899,16 +908,27 @@
       btn.setAttribute('aria-label', 'Menüyü aç');
     }
 
-    const REMOTE_URL = 'https://api.jsonbin.io/v3/b/6a684be2f5f4af5e29cb7996';
-    const REMOTE_KEY = '$2a$10$H9CF40b3AwUUodhS5Gw8Y.yLmGuKLyWKqbppVecFIDUIRwdU/gLkW';
+    const SETTINGS_KEY = 'financial-board-settings';
+
+    function loadRemoteSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
 
     async function syncFromRemote() {
+      const cfg = loadRemoteSettings();
+      if (!cfg || !cfg.binId || !cfg.accessKey) {
+        alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
+        return;
+      }
       const btn = document.getElementById('btn-sync-pull');
       btn.disabled = true;
       btn.textContent = '⏳';
       try {
-        const res = await fetch(REMOTE_URL, {
-          headers: { 'X-Access-Key': REMOTE_KEY }
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
+          headers: { 'X-Access-Key': cfg.accessKey }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -925,15 +945,20 @@
     }
 
     async function syncToRemote() {
+      const cfg = loadRemoteSettings();
+      if (!cfg || !cfg.binId || !cfg.accessKey) {
+        alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
+        return;
+      }
       const btn = document.getElementById('btn-sync-push');
       btn.disabled = true;
       btn.textContent = '⏳';
       try {
-        const res = await fetch(REMOTE_URL, {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'X-Access-Key': REMOTE_KEY
+            'X-Access-Key': cfg.accessKey
           },
           body: JSON.stringify(state)
         });
@@ -944,6 +969,66 @@
         btn.disabled = false;
         btn.innerHTML = '☁ <span class="btn-label">Uzağa Gönder</span>';
       }
+    }
+
+    function openSettings() {
+      settingsSection = 'types';
+      document.getElementById('settings-overlay').classList.add('open');
+      renderSettingsContent();
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-overlay').classList.remove('open');
+    }
+
+    function setSettingsSection(section) {
+      settingsSection = section;
+      document.querySelectorAll('.settings-nav-item').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('onclick') === `setSettingsSection('${section}')`);
+      });
+      renderSettingsContent();
+    }
+
+    function renderSettingsContent() {
+      if (settingsSection === 'types') {
+        renderModal('settings-content');
+      } else {
+        const cfg = loadRemoteSettings() || {};
+        const el = document.getElementById('settings-content');
+        el.innerHTML = `
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Remote DB Ayarları</h3>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
+            <label style="font-size:13px;font-weight:600;">Bin ID
+              <input id="settings-bin-id" type="text" value="${escHtml(cfg.binId || '')}"
+                style="display:block;width:100%;margin-top:4px;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:5px;padding:6px 10px;">
+            </label>
+            <label style="font-size:13px;font-weight:600;">X-Access-Key
+              <div style="display:flex;gap:6px;margin-top:4px;">
+                <input id="settings-access-key" type="password" value="${escHtml(cfg.accessKey || '')}"
+                  style="flex:1;font-family:monospace;font-size:12px;border:1px solid var(--border);border-radius:5px;padding:6px 10px;">
+                <button onclick="toggleKeyVisibility()" style="border:1px solid var(--border);border-radius:5px;padding:6px 10px;background:var(--surface);font-size:14px;" title="Göster/Gizle">👁</button>
+              </div>
+            </label>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button class="btn-save" onclick="saveRemoteSettings()">Kaydet</button>
+              <span id="settings-save-msg" style="font-size:12px;color:var(--income);"></span>
+            </div>
+          </div>`;
+      }
+    }
+
+    function toggleKeyVisibility() {
+      const inp = document.getElementById('settings-access-key');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function saveRemoteSettings() {
+      const binId = document.getElementById('settings-bin-id').value.trim();
+      const accessKey = document.getElementById('settings-access-key').value.trim();
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ binId, accessKey }));
+      const msg = document.getElementById('settings-save-msg');
+      msg.textContent = 'Kaydedildi ✓';
+      setTimeout(() => { msg.textContent = ''; }, 1500);
     }
 
     function clearStorage() {
