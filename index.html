@@ -135,6 +135,7 @@
     <input type="file" id="import-file-input" accept=".json" style="display:none">
     <button id="btn-sync-pull" class="btn-secondary">☁ <span class="btn-label">Uzaktan Al</span></button>
     <button id="btn-sync-push" class="btn-secondary">☁ <span class="btn-label">Uzağa Gönder</span></button>
+    <button id="btn-clear" class="btn-secondary" style="color:var(--expense)">🗑 <span class="btn-label">Temizle</span></button>
     <button id="btn-types" class="btn-secondary">⚙ <span class="btn-label">Tipler</span></button>
   </div>
   <div id="drawer-backdrop"></div>
@@ -826,6 +827,7 @@
       document.getElementById('drawer-backdrop').addEventListener('click', closeDrawer);
       document.getElementById('btn-sync-pull').addEventListener('click', syncFromRemote);
       document.getElementById('btn-sync-push').addEventListener('click', syncToRemote);
+      document.getElementById('btn-clear').addEventListener('click', clearStorage);
     }
 
     function toggleDrawer() {
@@ -887,6 +889,15 @@
         btn.disabled = false;
         btn.innerHTML = '☁ <span class="btn-label">Uzağa Gönder</span>';
       }
+    }
+
+    function clearStorage() {
+      if (!confirm('Tüm veriler silinecek. Emin misiniz?')) return;
+      localStorage.removeItem('financial-board-v1');
+      state = initState();
+      saveState();
+      renderSidebar();
+      renderContent();
     }
 
     function exportData() {
