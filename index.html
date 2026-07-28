@@ -855,11 +855,7 @@
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const record = data.record;
-        if (!record.incomeTypes || !record.expenseTypes || !record.months) {
-          throw new Error('Geçersiz veri formatı');
-        }
-        state = record;
+        state = data.record;
         saveState();
         renderSidebar();
         renderContent();
