@@ -162,12 +162,28 @@
     <button id="btn-sync-pull" class="btn-secondary">☁ <span class="btn-label">Uzaktan Al</span></button>
     <button id="btn-sync-push" class="btn-secondary">☁ <span class="btn-label">Uzağa Gönder</span></button>
     <button id="btn-clear" class="btn-secondary" style="color:var(--expense)">🗑 <span class="btn-label">Temizle</span></button>
-    <button id="btn-types" class="btn-secondary">⚙ <span class="btn-label">Tipler</span></button>
+    <button id="btn-settings" class="btn-secondary">⚙ <span class="btn-label">Ayarlar</span></button>
   </div>
   <div id="drawer-backdrop"></div>
   <div id="main">
     <nav id="sidebar"></nav>
     <main id="content"></main>
+  </div>
+  <!-- Settings Modal -->
+  <div id="settings-overlay">
+    <div id="settings-modal">
+      <div class="settings-modal-header">
+        <h2>⚙ Ayarlar</h2>
+        <button class="modal-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="settings-modal-body">
+        <nav class="settings-nav">
+          <button class="settings-nav-item active" onclick="setSettingsSection('types')">Tipler</button>
+          <button class="settings-nav-item" onclick="setSettingsSection('remote')">Remote DB</button>
+        </nav>
+        <div class="settings-content" id="settings-content"></div>
+      </div>
+    </div>
   </div>
   <!-- Types Modal -->
   <div id="modal-overlay">
