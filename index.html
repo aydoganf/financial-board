@@ -133,6 +133,8 @@
     <button id="btn-export" class="btn-secondary">⬇ <span class="btn-label">Dışa Aktar</span></button>
     <button id="btn-import" class="btn-secondary">⬆ <span class="btn-label">İçe Aktar</span></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
+    <button id="btn-sync-pull" class="btn-secondary">☁ <span class="btn-label">Uzaktan Al</span></button>
+    <button id="btn-sync-push" class="btn-secondary">☁ <span class="btn-label">Uzağa Gönder</span></button>
     <button id="btn-types" class="btn-secondary">⚙ <span class="btn-label">Tipler</span></button>
   </div>
   <div id="drawer-backdrop"></div>
@@ -822,6 +824,8 @@
       document.getElementById('import-file-input').addEventListener('change', importData);
       document.getElementById('btn-menu').addEventListener('click', toggleDrawer);
       document.getElementById('drawer-backdrop').addEventListener('click', closeDrawer);
+      document.getElementById('btn-sync-pull').addEventListener('click', syncFromRemote);
+      document.getElementById('btn-sync-push').addEventListener('click', syncToRemote);
     }
 
     function toggleDrawer() {
@@ -836,6 +840,57 @@
       const btn = document.getElementById('btn-menu');
       btn.setAttribute('aria-expanded', 'false');
       btn.setAttribute('aria-label', 'Menüyü aç');
+    }
+
+    const REMOTE_URL = 'https://api.jsonbin.io/v3/b/6a684be2f5f4af5e29cb7996';
+    const REMOTE_KEY = '$2a$10$H9CF40b3AwUUodhS5Gw8Y.yLmGuKLyWKqbppVecFIDUIRwdU/gLkW';
+
+    async function syncFromRemote() {
+      const btn = document.getElementById('btn-sync-pull');
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      try {
+        const res = await fetch(REMOTE_URL, {
+          headers: { 'X-Access-Key': REMOTE_KEY }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const record = data.record;
+        if (!record.incomeTypes || !record.expenseTypes || !record.months) {
+          throw new Error('Geçersiz veri formatı');
+        }
+        state = record;
+        saveState();
+        renderSidebar();
+        renderContent();
+      } catch (err) {
+        alert('Uzaktan alma başarısız: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '☁ <span class="btn-label">Uzaktan Al</span>';
+      }
+    }
+
+    async function syncToRemote() {
+      const btn = document.getElementById('btn-sync-push');
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      try {
+        const res = await fetch(REMOTE_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Access-Key': REMOTE_KEY
+          },
+          body: JSON.stringify({ record: state })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        alert('Uzağa gönderme başarısız: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '☁ <span class="btn-label">Uzağa Gönder</span>';
+      }
     }
 
     function exportData() {
