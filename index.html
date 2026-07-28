@@ -751,10 +751,11 @@
     }
 
     function renderModal(containerId) {
+      const inSettings = containerId === 'settings-content';
       const types = modalTab === 'income' ? state.incomeTypes : state.expenseTypes;
       const modal = document.getElementById(containerId || 'modal');
       modal.innerHTML = `
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        ${inSettings ? '' : '<button class="modal-close" onclick="closeModal()">✕</button>'}
         <h3 style="font-size:16px;margin-bottom:14px;">Tip Yönetimi</h3>
         <div class="modal-tabs">
           <button class="modal-tab${modalTab === 'income' ? ' active' : ''}" onclick="setModalTab('income')">Gelir Tipleri</button>
@@ -974,6 +975,7 @@
 
     function closeSettings() {
       document.getElementById('settings-overlay').classList.remove('open');
+      typeEditingId = null;
     }
 
     function setSettingsSection(section) {
