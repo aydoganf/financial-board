@@ -878,7 +878,7 @@
             'Content-Type': 'application/json',
             'X-Access-Key': REMOTE_KEY
           },
-          body: JSON.stringify({ record: state })
+          body: JSON.stringify(state)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch (err) {
