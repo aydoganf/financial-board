@@ -90,6 +90,13 @@
     .type-warn { color: var(--expense); font-size: 11px; margin-top: 2px; }
     .modal-close { float: right; font-size: 18px; color: var(--text-muted); background: none; border: none; cursor: pointer; }
     #btn-menu { display: none; }
+    .data-menu-wrap { position: relative; }
+    .data-menu-panel { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); min-width: 168px; z-index: 50; padding: 4px 0; }
+    .data-menu-panel.open { display: block; }
+    .data-menu-item { width: 100%; text-align: left; padding: 8px 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+    .data-menu-item:hover { background: var(--bg); }
+    .data-menu-item.danger { color: var(--expense); }
+    .data-menu-sep { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
     /* ── Mobile (≤ 640px) ──────────────────────────────────────── */
     @media (max-width: 640px) {
@@ -156,12 +163,19 @@
   <div id="topbar">
     <button id="btn-menu" aria-label="Menüyü aç" style="font-size:20px;padding:4px 8px;">☰</button>
     <h1>💰 Finansal Pano</h1>
-    <button id="btn-export" class="btn-secondary">⬇ <span class="btn-label">Dışa Aktar</span></button>
-    <button id="btn-import" class="btn-secondary">⬆ <span class="btn-label">İçe Aktar</span></button>
+    <div class="data-menu-wrap">
+      <button id="btn-data" class="btn-secondary" onclick="toggleDataMenu()">📁 <span class="btn-label">Veri</span></button>
+      <div id="data-menu-panel" class="data-menu-panel">
+        <button id="btn-export" class="data-menu-item" onclick="exportData();closeDataMenu()">⬇ Dışa Aktar</button>
+        <button id="btn-import" class="data-menu-item" onclick="document.getElementById('import-file-input').click();closeDataMenu()">⬆ İçe Aktar</button>
+        <hr class="data-menu-sep">
+        <button id="btn-sync-pull" class="data-menu-item" onclick="syncFromRemote();closeDataMenu()">📥 Uzaktan Al</button>
+        <button id="btn-sync-push" class="data-menu-item" onclick="syncToRemote();closeDataMenu()">📤 Uzağa Gönder</button>
+        <hr class="data-menu-sep">
+        <button id="btn-clear" class="data-menu-item danger" onclick="clearStorage();closeDataMenu()">🗑 Temizle</button>
+      </div>
+    </div>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
-    <button id="btn-sync-pull" class="btn-secondary">☁ <span class="btn-label">Uzaktan Al</span></button>
-    <button id="btn-sync-push" class="btn-secondary">☁ <span class="btn-label">Uzağa Gönder</span></button>
-    <button id="btn-clear" class="btn-secondary" style="color:var(--expense)">🗑 <span class="btn-label">Temizle</span></button>
     <button id="btn-settings" class="btn-secondary">⚙ <span class="btn-label">Ayarlar</span></button>
   </div>
   <div id="drawer-backdrop"></div>
@@ -862,14 +876,12 @@
         if (e.target === this) closeSettings();
       });
       document.getElementById('btn-settings').addEventListener('click', openSettings);
-      document.getElementById('btn-export').addEventListener('click', exportData);
-      document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file-input').click());
       document.getElementById('import-file-input').addEventListener('change', importData);
       document.getElementById('btn-menu').addEventListener('click', toggleDrawer);
       document.getElementById('drawer-backdrop').addEventListener('click', closeDrawer);
-      document.getElementById('btn-sync-pull').addEventListener('click', syncFromRemote);
-      document.getElementById('btn-sync-push').addEventListener('click', syncToRemote);
-      document.getElementById('btn-clear').addEventListener('click', clearStorage);
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.data-menu-wrap')) closeDataMenu();
+      });
 
       try {
         initState();
@@ -921,9 +933,6 @@
         alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
         return;
       }
-      const btn = document.getElementById('btn-sync-pull');
-      btn.disabled = true;
-      btn.textContent = '⏳';
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
           headers: { 'X-Access-Key': cfg.accessKey }
@@ -936,9 +945,6 @@
         renderContent();
       } catch (err) {
         alert('Uzaktan alma başarısız: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '☁ <span class="btn-label">Uzaktan Al</span>';
       }
     }
 
@@ -948,9 +954,6 @@
         alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
         return;
       }
-      const btn = document.getElementById('btn-sync-push');
-      btn.disabled = true;
-      btn.textContent = '⏳';
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
           method: 'PUT',
@@ -963,9 +966,6 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch (err) {
         alert('Uzağa gönderme başarısız: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '☁ <span class="btn-label">Uzağa Gönder</span>';
       }
     }
 
@@ -1028,6 +1028,14 @@
       const msg = document.getElementById('settings-save-msg');
       msg.textContent = 'Kaydedildi ✓';
       setTimeout(() => { msg.textContent = ''; }, 1500);
+    }
+
+    function toggleDataMenu() {
+      document.getElementById('data-menu-panel').classList.toggle('open');
+    }
+
+    function closeDataMenu() {
+      document.getElementById('data-menu-panel').classList.remove('open');
     }
 
     function clearStorage() {
