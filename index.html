@@ -90,6 +90,12 @@
     .type-warn { color: var(--expense); font-size: 11px; margin-top: 2px; }
     .modal-close { float: right; font-size: 18px; color: var(--text-muted); background: none; border: none; cursor: pointer; }
     #btn-menu { display: none; }
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.15); opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; min-width: 220px; }
+    .toast-item.visible { opacity: 1; transform: translateY(0); }
+    .toast-item.loading { background: #1e293b; color: #f8fafc; }
+    .toast-item.success { background: #16a34a; color: #fff; }
+    .toast-item.error { background: var(--expense); color: #fff; }
     .data-menu-wrap { position: relative; }
     .data-menu-panel { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); min-width: 168px; z-index: 50; padding: 4px 0; }
     .data-menu-panel.open { display: block; }
@@ -179,6 +185,7 @@
     <button id="btn-settings" class="btn-secondary">⚙ <span class="btn-label">Ayarlar</span></button>
   </div>
   <div id="drawer-backdrop"></div>
+  <div id="toast"></div>
   <div id="main">
     <nav id="sidebar"></nav>
     <main id="content"></main>
@@ -930,9 +937,10 @@
     async function syncFromRemote() {
       const cfg = loadRemoteSettings();
       if (!cfg || !cfg.binId || !cfg.accessKey) {
-        alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
+        showToast('Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.', 'error');
         return;
       }
+      const t = showToast('Uzaktan alınıyor…', 'loading');
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
           headers: { 'X-Access-Key': cfg.accessKey }
@@ -943,17 +951,21 @@
         saveState();
         renderSidebar();
         renderContent();
+        t.remove();
+        showToast('Uzaktan alma başarılı', 'success');
       } catch (err) {
-        alert('Uzaktan alma başarısız: ' + err.message);
+        t.remove();
+        showToast('Uzaktan alma başarısız: ' + err.message, 'error');
       }
     }
 
     async function syncToRemote() {
       const cfg = loadRemoteSettings();
       if (!cfg || !cfg.binId || !cfg.accessKey) {
-        alert('Lütfen Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.');
+        showToast('Ayarlar > Remote DB bölümünden bağlantı bilgilerini girin.', 'error');
         return;
       }
+      const t = showToast('Uzağa gönderiliyor…', 'loading');
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
           method: 'PUT',
@@ -964,8 +976,11 @@
           body: JSON.stringify(state)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        t.remove();
+        showToast('Uzağa gönderme başarılı', 'success');
       } catch (err) {
-        alert('Uzağa gönderme başarısız: ' + err.message);
+        t.remove();
+        showToast('Uzağa gönderme başarısız: ' + err.message, 'error');
       }
     }
 
@@ -1028,6 +1043,23 @@
       const msg = document.getElementById('settings-save-msg');
       msg.textContent = 'Kaydedildi ✓';
       setTimeout(() => { msg.textContent = ''; }, 1500);
+    }
+
+    function showToast(message, type, duration) {
+      const container = document.getElementById('toast');
+      const el = document.createElement('div');
+      el.className = 'toast-item ' + type;
+      const icons = { loading: '⏳', success: '✓', error: '✕' };
+      el.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+      container.appendChild(el);
+      requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add('visible'); }); });
+      if (type !== 'loading') {
+        setTimeout(() => {
+          el.classList.remove('visible');
+          setTimeout(() => el.remove(), 250);
+        }, duration || 3000);
+      }
+      return el;
     }
 
     function toggleDataMenu() {
