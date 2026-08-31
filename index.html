@@ -300,7 +300,7 @@
       const currentYear = new Date().getFullYear();
       const maxYear = currentYear + 5;
       let html = '';
-      for (let y = maxYear; y >= 2020; y--) {
+      for (let y = 2020; y <= maxYear; y++) {
         const isPast = y < currentYear;
         if (isPast) {
           const hasData = Object.keys(state.months).some(k => k.startsWith(`${y}-`));
