@@ -353,6 +353,17 @@
       renderContent();
     }
 
+    function navigateMonth(delta) {
+      if (!activeMonth) return;
+      const [y, m] = activeMonth.split('-').map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      ensureMonth(next);
+      activeMonth = next;
+      renderSidebar();
+      renderContent();
+    }
+
     function renderContent() {
       const content = document.getElementById('content');
       if (activeYearView) { renderYearView(activeYearView); return; }
@@ -382,7 +393,14 @@
         </div>` : '';
 
       content.innerHTML = `
-        <h2 style="font-size:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">${monthLabel}${cloneUI}</h2>
+        <h2 style="font-size:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="navigateMonth(-1)" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;color:var(--text);" title="Önceki ay">‹</button>
+            <span>${monthLabel}</span>
+            <button onclick="navigateMonth(1)" style="background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;color:var(--text);" title="Sonraki ay">›</button>
+          </div>
+          ${cloneUI}
+        </h2>
         <div id="summary-strip">
           <div class="stat-card">
             <div class="label">Toplam Gelir</div>
