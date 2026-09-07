@@ -1085,10 +1085,12 @@
       activePackagesView = true;
       activeYearView = null;
       activeMonth = null;
-      if (!editingPkgId && state.savingsPackages.length > 0) {
-        editingPkgId = state.savingsPackages[0].id;
+      if (state.savingsPackages.length > 0) {
+        editingPkgId = editingPkgId || state.savingsPackages[0].id;
+        pkgDetailId = editingPkgId;
+      } else {
+        pkgDetailId = null;
       }
-      pkgDetailId = null;
       renderSidebar();
       renderContent();
     }
@@ -1127,7 +1129,7 @@
 
     function pkgSelectItem(id) {
       editingPkgId = id;
-      pkgDetailId = null;
+      pkgDetailId = id;
       renderPackagesPage();
     }
 
