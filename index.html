@@ -501,6 +501,17 @@
         </div>`;
     }
 
+    function clearYearData(y) {
+      if (!confirm(`${y} yılına ait tüm veriler silinecek. Emin misiniz?`)) return;
+      for (let m = 1; m <= 12; m++) {
+        const key = `${y}-${String(m).padStart(2, '0')}`;
+        delete state.months[key];
+      }
+      saveState();
+      renderSidebar();
+      renderYearView(y);
+    }
+
     function renderYearView(y) {
       const content = document.getElementById('content');
       const months = [];
@@ -529,7 +540,10 @@
 
       const rc = totRemain >= 0 ? 'var(--remaining)' : 'var(--expense)';
       content.innerHTML = `
-        <h2 style="font-size:18px;margin-bottom:16px;">${y} Yılı Özeti</h2>
+        <h2 style="font-size:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+          <span>${y} Yılı Özeti</span>
+          <button onclick="clearYearData(${y})" style="font-size:12px;padding:5px 12px;border:1px solid var(--expense);border-radius:6px;color:var(--expense);background:transparent;cursor:pointer;">🗑 ${y} Verisini Temizle</button>
+        </h2>
         <div class="section-card">
           <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;min-width:360px;">
