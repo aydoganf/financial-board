@@ -96,6 +96,43 @@
     .toast-item.loading { background: #1e293b; color: #f8fafc; }
     .toast-item.success { background: #16a34a; color: #fff; }
     .toast-item.error { background: var(--expense); color: #fff; }
+    /* Savings Packages */
+    #packages-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 400; align-items: center; justify-content: center; }
+    #packages-overlay.open { display: flex; }
+    #packages-modal { background: var(--surface); border-radius: 10px; width: 760px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+    .pkg-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .pkg-modal-header h2 { font-size: 15px; font-weight: 700; }
+    .pkg-modal-body { display: flex; flex: 1; overflow: hidden; }
+    .pkg-list-panel { width: 220px; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .pkg-list-scroll { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .pkg-list-item { width: 100%; text-align: left; padding: 10px 16px; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; }
+    .pkg-list-item:hover { background: var(--bg); }
+    .pkg-list-item.active { border-left-color: var(--remaining); background: #eff6ff; font-weight: 600; color: var(--remaining); }
+    .pkg-list-item .pkg-item-name { font-weight: 500; }
+    .pkg-list-item .pkg-item-total { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .pkg-new-btn { margin: 8px 12px; padding: 8px; font-size: 13px; border: 1px dashed var(--border); border-radius: 6px; background: none; cursor: pointer; color: var(--text-muted); }
+    .pkg-new-btn:hover { border-color: var(--remaining); color: var(--remaining); }
+    .pkg-editor { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .pkg-editor-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; }
+    .pkg-field label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    .pkg-field input[type="text"], .pkg-field input[type="number"] { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; background: var(--bg); color: var(--text); }
+    .pkg-months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .pkg-month-check { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+    .pkg-month-check input { cursor: pointer; flex-shrink: 0; }
+    .pkg-month-check.checked { border-color: var(--remaining); background: #eff6ff; }
+    .pkg-month-remaining { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .pkg-extras-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .pkg-extras-table td { padding: 4px 4px; vertical-align: middle; }
+    .pkg-extras-table input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; background: var(--bg); color: var(--text); }
+    .pkg-save-bar { display: flex; align-items: center; gap: 10px; padding-top: 4px; border-top: 1px solid var(--border); }
+    /* Package detail modal */
+    #pkg-detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500; align-items: center; justify-content: center; }
+    #pkg-detail-overlay.open { display: flex; }
+    #pkg-detail-modal { background: var(--surface); border-radius: 10px; width: 560px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+    .pkg-detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .pkg-detail-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+    .pkg-detail-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .pkg-detail-table tr:last-child td { border-bottom: none; }
     .data-menu-wrap { position: relative; }
     .data-menu-panel { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); min-width: 168px; z-index: 50; padding: 4px 0; }
     .data-menu-panel.open { display: block; }
@@ -162,6 +199,16 @@
       .item-edit-row select { width: 100%; }
 
       .pie-chart-wrap { width: 100%; }
+
+      #packages-modal { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+      .pkg-modal-body { flex-direction: column; }
+      .pkg-list-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; max-height: 160px; }
+      .pkg-list-scroll { display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+      .pkg-list-item { white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; padding: 8px 12px; }
+      .pkg-list-item.active { border-bottom-color: var(--remaining); border-left: none; background: #eff6ff; }
+      .pkg-new-btn { white-space: nowrap; align-self: center; margin: 0 8px; }
+      .pkg-months-grid { grid-template-columns: repeat(2, 1fr); }
+      #pkg-detail-modal { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
     }
   </style>
 </head>
@@ -182,10 +229,37 @@
       </div>
     </div>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
+    <button id="btn-packages" class="btn-secondary">🏦 <span class="btn-label">Birikimler</span></button>
     <button id="btn-settings" class="btn-secondary">⚙ <span class="btn-label">Ayarlar</span></button>
   </div>
   <div id="drawer-backdrop"></div>
   <div id="toast"></div>
+  <!-- Savings Packages Modal -->
+  <div id="packages-overlay">
+    <div id="packages-modal">
+      <div class="pkg-modal-header">
+        <h2>🏦 Birikim Paketleri</h2>
+        <button class="modal-close" onclick="closePackages()">✕</button>
+      </div>
+      <div class="pkg-modal-body">
+        <div class="pkg-list-panel">
+          <div class="pkg-list-scroll" id="pkg-list-scroll"></div>
+          <button class="pkg-new-btn" onclick="openPackageEditor(null)">+ Yeni Paket</button>
+        </div>
+        <div class="pkg-editor" id="pkg-editor-area"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Package Detail Modal -->
+  <div id="pkg-detail-overlay">
+    <div id="pkg-detail-modal">
+      <div class="pkg-modal-header">
+        <h2 id="pkg-detail-title"></h2>
+        <button class="modal-close" onclick="closePkgDetail()">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:16px 20px;" id="pkg-detail-body"></div>
+    </div>
+  </div>
   <div id="main">
     <nav id="sidebar"></nav>
     <main id="content"></main>
@@ -269,7 +343,9 @@
         incomeTypes: DEFAULT_INCOME_TYPES.map(t => ({ ...t })),
         expenseTypes: DEFAULT_EXPENSE_TYPES.map(t => ({ ...t })),
         months: {},
+        savingsPackages: [],
       };
+      if (!state.savingsPackages) state.savingsPackages = [];
     }
 
     function ensureMonth(key) {
@@ -914,6 +990,13 @@
       document.getElementById('settings-overlay').addEventListener('click', function(e) {
         if (e.target === this) closeSettings();
       });
+      document.getElementById('btn-packages').addEventListener('click', openPackages);
+      document.getElementById('packages-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closePackages();
+      });
+      document.getElementById('pkg-detail-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closePkgDetail();
+      });
       document.getElementById('btn-settings').addEventListener('click', openSettings);
       document.getElementById('import-file-input').addEventListener('change', importData);
       document.getElementById('btn-menu').addEventListener('click', toggleDrawer);
@@ -1014,6 +1097,211 @@
         t.remove();
         showToast('Uzağa gönderme başarısız: ' + err.message, 'error');
       }
+    }
+
+    /* ── Savings Packages ───────────────────────────────────── */
+    let editingPkgId = null;
+
+    function pkgMonthRemaining(key) {
+      const d = state.months[key];
+      if (!d) return 0;
+      const inc = d.incomes.reduce((s, i) => s + (i.amount || 0), 0);
+      const exp = d.expenses.reduce((s, i) => s + (i.amount || 0), 0);
+      return inc - exp;
+    }
+
+    function pkgTotal(pkg) {
+      const rate = (pkg.effectiveRate || 0) / 100;
+      const fromMonths = (pkg.months || []).reduce((s, k) => s + pkgMonthRemaining(k) * rate, 0);
+      const fromExtras = (pkg.extraItems || []).reduce((s, x) => s + (x.amount || 0), 0);
+      return fromMonths + fromExtras;
+    }
+
+    function openPackages() {
+      document.getElementById('packages-overlay').classList.add('open');
+      renderPkgList();
+      if (state.savingsPackages.length === 0) {
+        document.getElementById('pkg-editor-area').innerHTML = '<div class="pkg-editor-empty">Yeni paket oluşturmak için + butonuna tıklayın.</div>';
+      } else {
+        openPackageEditor(state.savingsPackages[0].id);
+      }
+    }
+
+    function closePackages() {
+      document.getElementById('packages-overlay').classList.remove('open');
+    }
+
+    function renderPkgList() {
+      const list = document.getElementById('pkg-list-scroll');
+      if (!state.savingsPackages.length) {
+        list.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--text-muted);text-align:center;">Henüz paket yok.</div>';
+        return;
+      }
+      list.innerHTML = state.savingsPackages.map(p => `
+        <div class="pkg-list-item${editingPkgId === p.id ? ' active' : ''}" onclick="openPackageEditor('${p.id}')">
+          <div class="pkg-item-name">${escHtml(p.name || 'İsimsiz Paket')}</div>
+          <div class="pkg-item-total">${fmt(pkgTotal(p))}</div>
+        </div>`).join('');
+    }
+
+    function openPackageEditor(id) {
+      editingPkgId = id;
+      renderPkgList();
+      const area = document.getElementById('pkg-editor-area');
+      const pkg = id ? state.savingsPackages.find(p => p.id === id) : null;
+
+      const allMonthKeys = Object.keys(state.months).sort((a, b) => a.localeCompare(b));
+
+      const monthsHtml = allMonthKeys.map(key => {
+        const [y, m] = key.split('-');
+        const label = `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
+        const rem = pkgMonthRemaining(key);
+        const checked = pkg && (pkg.months || []).includes(key);
+        return `<label class="pkg-month-check${checked ? ' checked' : ''}" id="pkg-mc-${key}">
+          <input type="checkbox" value="${key}" ${checked ? 'checked' : ''} onchange="togglePkgMonthCheck(this,'${key}')">
+          <span>${label}</span>
+          <span class="pkg-month-remaining" style="color:${rem >= 0 ? 'var(--income)' : 'var(--expense)'}">${fmt(rem)}</span>
+        </label>`;
+      }).join('');
+
+      const extras = pkg ? (pkg.extraItems || []) : [];
+      const extrasHtml = extras.map((x, i) => `
+        <tr>
+          <td><input type="text" value="${escHtml(x.label)}" oninput="updatePkgExtra(${i},'label',this.value)" placeholder="Açıklama"></td>
+          <td style="width:130px"><input type="number" value="${x.amount}" oninput="updatePkgExtra(${i},'amount',+this.value)" placeholder="Tutar"></td>
+          <td style="width:32px"><button onclick="removePkgExtra(${i})" style="background:none;border:none;cursor:pointer;color:var(--expense);font-size:16px;">×</button></td>
+        </tr>`).join('');
+
+      area.innerHTML = `
+        <div class="pkg-field">
+          <label>Paket Adı</label>
+          <input type="text" id="pkg-name" value="${escHtml(pkg ? pkg.name : '')}" placeholder="örn. Ev Alımı">
+        </div>
+        <div class="pkg-field">
+          <label>Aylık Efektif Birikim Oranı (%)</label>
+          <input type="number" id="pkg-rate" value="${pkg ? pkg.effectiveRate : 85}" min="0" max="100" style="max-width:120px;">
+        </div>
+        <div class="pkg-field">
+          <label>Dahil Edilecek Aylar</label>
+          ${allMonthKeys.length ? `<div class="pkg-months-grid">${monthsHtml}</div>` : '<div style="font-size:12px;color:var(--text-muted);">Sistemde kayıtlı ay verisi yok.</div>'}
+        </div>
+        <div class="pkg-field">
+          <label>Ekstra Kalemler</label>
+          <table class="pkg-extras-table" id="pkg-extras-tbl"><tbody id="pkg-extras-body">${extrasHtml}</tbody></table>
+          <button onclick="addPkgExtra()" style="margin-top:6px;font-size:12px;padding:5px 10px;border:1px dashed var(--border);border-radius:5px;background:none;cursor:pointer;color:var(--text-muted);">+ Kalem Ekle</button>
+        </div>
+        <div class="pkg-save-bar">
+          <button class="btn-save" onclick="savePackage()">Kaydet</button>
+          ${id ? `<button onclick="openPkgDetail('${id}')" style="font-size:13px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;">📋 Detay</button>` : ''}
+          ${id ? `<button onclick="deletePackage('${id}')" style="margin-left:auto;font-size:13px;padding:6px 12px;border:1px solid var(--expense);border-radius:6px;color:var(--expense);background:transparent;cursor:pointer;">Sil</button>` : ''}
+        </div>`;
+    }
+
+    function togglePkgMonthCheck(el, key) {
+      el.closest('label').classList.toggle('checked', el.checked);
+    }
+
+    function addPkgExtra() {
+      const tbody = document.getElementById('pkg-extras-body');
+      const i = tbody.rows.length;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" placeholder="Açıklama" oninput="void 0"></td>
+        <td style="width:130px"><input type="number" placeholder="Tutar" oninput="void 0"></td>
+        <td style="width:32px"><button onclick="this.closest('tr').remove()" style="background:none;border:none;cursor:pointer;color:var(--expense);font-size:16px;">×</button></td>`;
+      tbody.appendChild(tr);
+    }
+
+    function updatePkgExtra(i, field, val) { /* live state is read on save */ }
+    function removePkgExtra(i) {
+      document.getElementById('pkg-extras-body').rows[i].remove();
+    }
+
+    function savePackage() {
+      const name = document.getElementById('pkg-name').value.trim() || 'İsimsiz Paket';
+      const effectiveRate = parseFloat(document.getElementById('pkg-rate').value) || 0;
+      const months = Array.from(document.querySelectorAll('.pkg-month-check input:checked')).map(el => el.value);
+      const extraRows = document.getElementById('pkg-extras-body').rows;
+      const extraItems = [];
+      for (const row of extraRows) {
+        const inputs = row.querySelectorAll('input');
+        const label = inputs[0].value.trim();
+        const amount = parseFloat(inputs[1].value) || 0;
+        if (label || amount) extraItems.push({ label, amount });
+      }
+      if (editingPkgId) {
+        const pkg = state.savingsPackages.find(p => p.id === editingPkgId);
+        if (pkg) Object.assign(pkg, { name, effectiveRate, months, extraItems });
+      } else {
+        const pkg = { id: Date.now().toString(36), name, effectiveRate, months, extraItems };
+        state.savingsPackages.push(pkg);
+        editingPkgId = pkg.id;
+      }
+      saveState();
+      renderPkgList();
+      openPackageEditor(editingPkgId);
+    }
+
+    function deletePackage(id) {
+      if (!confirm('Bu paketi silmek istediğinizden emin misiniz?')) return;
+      state.savingsPackages = state.savingsPackages.filter(p => p.id !== id);
+      editingPkgId = null;
+      saveState();
+      renderPkgList();
+      document.getElementById('pkg-editor-area').innerHTML = '<div class="pkg-editor-empty">Yeni paket oluşturmak için + butonuna tıklayın.</div>';
+    }
+
+    function openPkgDetail(id) {
+      const pkg = state.savingsPackages.find(p => p.id === id);
+      if (!pkg) return;
+      const rate = (pkg.effectiveRate || 0) / 100;
+      document.getElementById('pkg-detail-title').textContent = `📋 ${pkg.name}`;
+      let rows = '';
+      let total = 0;
+      (pkg.months || []).forEach(key => {
+        const [y, m] = key.split('-');
+        const label = `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
+        const rem = pkgMonthRemaining(key);
+        const contrib = rem * rate;
+        total += contrib;
+        const rc = contrib >= 0 ? 'var(--income)' : 'var(--expense)';
+        rows += `<tr>
+          <td>${label}</td>
+          <td style="text-align:right;color:var(--text-muted)">${fmt(rem)}</td>
+          <td style="text-align:right">${pkg.effectiveRate}%</td>
+          <td style="text-align:right;font-weight:600;color:${rc}">${fmt(contrib)}</td>
+        </tr>`;
+      });
+      (pkg.extraItems || []).forEach(x => {
+        if (!x.label && !x.amount) return;
+        total += x.amount || 0;
+        rows += `<tr>
+          <td>${escHtml(x.label || '—')}</td>
+          <td style="text-align:right;color:var(--text-muted)">—</td>
+          <td style="text-align:right">—</td>
+          <td style="text-align:right;font-weight:600;color:var(--income)">${fmt(x.amount || 0)}</td>
+        </tr>`;
+      });
+      const tc = total >= 0 ? 'var(--remaining)' : 'var(--expense)';
+      document.getElementById('pkg-detail-body').innerHTML = `
+        <table class="pkg-detail-table">
+          <thead><tr>
+            <th>Kalem</th>
+            <th style="text-align:right">Kalan</th>
+            <th style="text-align:right">Oran</th>
+            <th style="text-align:right">Katkı</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="4" style="color:var(--text-muted);padding:16px;">Kalem yok.</td></tr>'}</tbody>
+          <tfoot><tr style="background:var(--bg);">
+            <td colspan="3" style="padding:10px 12px;font-weight:700;">Toplam</td>
+            <td style="padding:10px 12px;text-align:right;font-size:16px;font-weight:700;color:${tc}">${fmt(total)}</td>
+          </tfoot>
+        </table>`;
+      document.getElementById('pkg-detail-overlay').classList.add('open');
+    }
+
+    function closePkgDetail() {
+      document.getElementById('pkg-detail-overlay').classList.remove('open');
     }
 
     function openSettings() {
