@@ -211,7 +211,7 @@ Bu veride: 4 dolu ay (2025-03 boş → atlanır), 2025-02 kalanı negatif (−15
     function renderLineChart(series, width) {
       const W = Math.max(300, Math.round(width));
       const H = W < 500 ? 240 : 320;
-      const pad = { top: 12, right: 16, bottom: 32, left: 64 };
+      const pad = { top: 12, right: 28, bottom: 32, left: 64 };
       const plotW = W - pad.left - pad.right;
       const plotH = H - pad.top - pad.bottom;
       const n = series.length;

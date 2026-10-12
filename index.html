@@ -135,6 +135,10 @@
     .data-menu-item:hover { background: var(--bg); }
     .data-menu-item.danger { color: var(--expense); }
     .data-menu-sep { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    /* Reports */
+    .report-legend { display: flex; gap: 16px; font-size: 12px; margin-bottom: 8px; color: var(--text); }
+    .report-chart-wrap { position: relative; }
+    .report-tooltip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.1); padding: 8px 10px; font-size: 12px; display: none; white-space: nowrap; z-index: 10; }
 
     /* ── Mobile (≤ 640px) ──────────────────────────────────────── */
     @media (max-width: 640px) {
@@ -223,6 +227,12 @@
       </div>
     </div>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
+    <div class="data-menu-wrap">
+      <button id="btn-reports" class="btn-secondary" onclick="toggleReportsMenu()">📈 <span class="btn-label">Raporlar</span></button>
+      <div id="reports-menu-panel" class="data-menu-panel">
+        <button class="data-menu-item" onclick="openAllTimeReport();closeReportsMenu()">📈 Tüm Zamanlar</button>
+      </div>
+    </div>
     <button id="btn-packages" class="btn-secondary">🏦 <span class="btn-label">Birikimler</span></button>
     <button id="btn-settings" class="btn-secondary">⚙ <span class="btn-label">Ayarlar</span></button>
   </div>
@@ -281,6 +291,8 @@
     let activeMonth = null; // "YYYY-MM"
     let activeYearView = null; // number — when set, show year overview instead of month
     let activePackagesView = false; // when true, show savings packages page
+    let activeReportView = null; // null | 'all-time' — when set, show reports page
+    let reportYear = 'all'; // 'all' | number — year filter on reports page
     let openYears = new Set(); // tracks which year groups are expanded
     let openSections = new Set(['incomes', 'expenses']); // both open by default
     let editingState = null; // { kind: 'income'|'expense', idx: number } | null
@@ -386,6 +398,7 @@
       activeMonth = key;
       activeYearView = null;
       activePackagesView = false;
+      activeReportView = null;
       ensureMonth(key);
       renderSidebar();
       renderContent();
@@ -396,6 +409,7 @@
       activeYearView = y;
       activeMonth = null;
       activePackagesView = false;
+      activeReportView = null;
       renderSidebar();
       renderContent();
     }
@@ -414,6 +428,7 @@
     function renderContent() {
       const content = document.getElementById('content');
       if (activePackagesView) { renderPackagesPage(); return; }
+      if (activeReportView) { renderAllTimeReport(); return; }
       if (activeYearView) { renderYearView(activeYearView); return; }
       if (!activeMonth) { content.innerHTML = ''; return; }
       const [y, m] = activeMonth.split('-');
@@ -968,7 +983,12 @@
       document.getElementById('btn-menu').addEventListener('click', toggleDrawer);
       document.getElementById('drawer-backdrop').addEventListener('click', closeDrawer);
       document.addEventListener('click', function(e) {
-        if (!e.target.closest('.data-menu-wrap')) closeDataMenu();
+        if (!e.target.closest('.data-menu-wrap')) { closeDataMenu(); closeReportsMenu(); }
+      });
+      let resizeTimer = null;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { if (activeReportView) renderContent(); }, 150);
       });
 
       try {
@@ -1065,6 +1085,163 @@
       }
     }
 
+    /* ── Reports ────────────────────────────────────────────── */
+    const REPORT_SERIES = [
+      { field: 'income',    label: 'Gelir', color: 'var(--income)' },
+      { field: 'expense',   label: 'Gider', color: 'var(--expense)' },
+      { field: 'remaining', label: 'Kalan', color: 'var(--remaining)' },
+    ];
+
+    function openAllTimeReport() {
+      closeDrawer();
+      if (editingState && activeMonth) cancelEdit(editingState.kind, editingState.idx);
+      activeReportView = 'all-time';
+      activeMonth = null;
+      activeYearView = null;
+      activePackagesView = false;
+      renderSidebar();
+      renderContent();
+    }
+
+    function setReportYear(value) {
+      reportYear = value === 'all' ? 'all' : parseInt(value, 10);
+      renderContent();
+    }
+
+    function isMonthFilled(data) {
+      return !!(data && (data.incomes.length || data.expenses.length));
+    }
+
+    function getReportSeries(year) {
+      return Object.keys(state.months)
+        .filter(k => isMonthFilled(state.months[k]))
+        .filter(k => year === 'all' || k.startsWith(`${year}-`))
+        .sort((a, b) => a.localeCompare(b))
+        .map(key => {
+          const data = state.months[key];
+          const [y, m] = key.split('-');
+          const mi = parseInt(m, 10) - 1;
+          const income = data.incomes.reduce((s, i) => s + (i.amount || 0), 0);
+          const expense = data.expenses.reduce((s, i) => s + (i.amount || 0), 0);
+          return {
+            key,
+            label: `${MONTHS[mi].slice(0, 3)} ${y.slice(2)}`,
+            longLabel: `${MONTHS[mi]} ${y}`,
+            income, expense, remaining: income - expense,
+          };
+        });
+    }
+
+    function getReportYears() {
+      const years = new Set(Object.keys(state.months)
+        .filter(k => isMonthFilled(state.months[k]))
+        .map(k => parseInt(k.slice(0, 4), 10)));
+      return [...years].sort((a, b) => b - a);
+    }
+
+    function fmtShort(n) {
+      const abs = Math.abs(n);
+      const sign = n < 0 ? '-' : '';
+      let val = abs, suffix = '';
+      if (abs >= 1e6) { val = abs / 1e6; suffix = 'M'; }
+      else if (abs >= 1e3) { val = abs / 1e3; suffix = 'B'; }
+      return `${sign}₺${val.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}${suffix}`;
+    }
+
+    function niceScale(min, max) {
+      if (min === max) max = min + 1;
+      const rawStep = (max - min) / 5;
+      const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+      const norm = rawStep / mag;
+      const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+      return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, step };
+    }
+
+    function renderLineChart(series, width) {
+      const W = Math.max(300, Math.round(width));
+      const H = W < 500 ? 240 : 320;
+      const pad = { top: 12, right: 28, bottom: 32, left: 64 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+      const n = series.length;
+      const values = series.flatMap(p => [p.income, p.expense, p.remaining]);
+      const scale = niceScale(Math.min(0, ...values), Math.max(0, ...values));
+      const x = i => n === 1 ? pad.left + plotW / 2 : pad.left + i * (plotW / (n - 1));
+      const y = v => pad.top + (scale.max - v) / (scale.max - scale.min) * plotH;
+
+      let grid = '';
+      const tickCount = Math.round((scale.max - scale.min) / scale.step);
+      for (let t = 0; t <= tickCount; t++) {
+        const v = scale.min + t * scale.step;
+        const isZero = Math.abs(v) < scale.step / 1e6;
+        const yy = y(v).toFixed(1);
+        grid += `<line x1="${pad.left}" x2="${W - pad.right}" y1="${yy}" y2="${yy}" stroke-width="1" style="stroke:${isZero ? 'var(--text-muted)' : 'var(--border)'}"/>
+          <text x="${pad.left - 8}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="11" style="fill:var(--text-muted)">${fmtShort(isZero ? 0 : v)}</text>`;
+      }
+
+      const maxLabels = Math.max(2, Math.floor(plotW / 56));
+      const labelStep = Math.ceil(n / maxLabels);
+      const xLabels = series.map((p, i) => i % labelStep === 0
+        ? `<text x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" style="fill:var(--text-muted)">${p.label}</text>`
+        : '').join('');
+
+      const lines = REPORT_SERIES.map(s => {
+        const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p[s.field]).toFixed(1)}`).join(' ');
+        const dots = series.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p[s.field]).toFixed(1)}" r="3" style="fill:${s.color}"/>`).join('');
+        return `<polyline points="${pts}" fill="none" stroke-width="2" stroke-linejoin="round" style="stroke:${s.color}"/>${dots}`;
+      }).join('');
+
+      const slotW = n === 1 ? plotW : plotW / (n - 1);
+      const hits = series.map((p, i) => {
+        const x0 = Math.max(pad.left, x(i) - slotW / 2);
+        const x1 = Math.min(W - pad.right, x(i) + slotW / 2);
+        return `<rect class="report-hit" data-idx="${i}" data-cx="${x(i).toFixed(1)}" x="${x0.toFixed(1)}" y="${pad.top}" width="${(x1 - x0).toFixed(1)}" height="${plotH}" fill="transparent" style="cursor:pointer"/>`;
+      }).join('');
+
+      return `<svg id="report-chart" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;height:auto;">
+        ${grid}${xLabels}
+        <line id="report-guide" x1="0" x2="0" y1="${pad.top}" y2="${pad.top + plotH}" stroke-width="1" stroke-dasharray="3,3" style="stroke:var(--text-muted);display:none"/>
+        ${lines}${hits}
+      </svg>`;
+    }
+
+    function renderAllTimeReport() {
+      const content = document.getElementById('content');
+      const years = getReportYears();
+      if (reportYear !== 'all' && !years.includes(reportYear)) reportYear = 'all';
+      const series = getReportSeries(reportYear);
+
+      const yearSelect = years.length ? `
+        <select id="report-year-select" onchange="setReportYear(this.value)" style="font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:5px;padding:4px 8px;background:#fff;color:var(--text);">
+          <option value="all"${reportYear === 'all' ? ' selected' : ''}>Tüm Yıllar</option>
+          ${years.map(y => `<option value="${y}"${reportYear === y ? ' selected' : ''}>${y}</option>`).join('')}
+        </select>` : '';
+
+      const legend = REPORT_SERIES.map(s => `
+        <span style="display:flex;align-items:center;gap:6px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:${s.color};"></span>${s.label}
+        </span>`).join('');
+
+      content.innerHTML = `
+        <h2 style="font-size:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+          <span>Tüm Zamanlar</span>
+          ${yearSelect}
+        </h2>
+        <div class="section-card" style="padding:16px;">
+          ${series.length
+            ? `<div class="report-legend">${legend}</div>
+               <div class="report-chart-wrap" id="report-chart-wrap"><div class="report-tooltip" id="report-tooltip"></div></div>`
+            : '<p style="font-size:13px;color:var(--text-muted);">Henüz kayıtlı aylık veri yok.</p>'}
+        </div>`;
+
+      if (!series.length) return;
+      const wrap = document.getElementById('report-chart-wrap');
+      wrap.insertAdjacentHTML('afterbegin', renderLineChart(series, wrap.clientWidth));
+      bindReportChartEvents(series);
+    }
+
+    function bindReportChartEvents(series) {}
+
     /* ── Savings Packages ───────────────────────────────────── */
     let editingPkgId = null;
     let pkgDetailId = null; // when set, right panel shows detail view
@@ -1088,6 +1265,7 @@
       activePackagesView = true;
       activeYearView = null;
       activeMonth = null;
+      activeReportView = null;
       if (state.savingsPackages.length > 0) {
         editingPkgId = editingPkgId || state.savingsPackages[0].id;
         pkgDetailId = editingPkgId;
@@ -1390,7 +1568,17 @@
     }
 
     function toggleDataMenu() {
+      closeReportsMenu();
       document.getElementById('data-menu-panel').classList.toggle('open');
+    }
+
+    function toggleReportsMenu() {
+      closeDataMenu();
+      document.getElementById('reports-menu-panel').classList.toggle('open');
+    }
+
+    function closeReportsMenu() {
+      document.getElementById('reports-menu-panel').classList.remove('open');
     }
 
     function closeDataMenu() {
