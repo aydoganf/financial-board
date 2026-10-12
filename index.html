@@ -1240,7 +1240,47 @@
       bindReportChartEvents(series);
     }
 
-    function bindReportChartEvents(series) {}
+    function bindReportChartEvents(series) {
+      const wrap = document.getElementById('report-chart-wrap');
+      const guide = document.getElementById('report-guide');
+      const tip = document.getElementById('report-tooltip');
+
+      function positionTip(e) {
+        const r = wrap.getBoundingClientRect();
+        let left = e.clientX - r.left + 12;
+        if (left + tip.offsetWidth > r.width) left = e.clientX - r.left - tip.offsetWidth - 12;
+        let top = e.clientY - r.top + 12;
+        if (top + tip.offsetHeight > r.height) top = r.height - tip.offsetHeight;
+        tip.style.left = Math.max(0, left) + 'px';
+        tip.style.top = Math.max(0, top) + 'px';
+      }
+
+      wrap.querySelectorAll('.report-hit').forEach(hit => {
+        const p = series[parseInt(hit.dataset.idx, 10)];
+        hit.addEventListener('mouseenter', e => {
+          guide.setAttribute('x1', hit.dataset.cx);
+          guide.setAttribute('x2', hit.dataset.cx);
+          guide.style.display = '';
+          tip.innerHTML = `<div style="font-weight:700;margin-bottom:4px;">${p.longLabel}</div>` +
+            REPORT_SERIES.map(s => {
+              const v = p[s.field];
+              const color = s.field === 'remaining' && v < 0 ? 'var(--expense)' : s.color;
+              return `<div style="display:flex;justify-content:space-between;gap:16px;">
+                <span style="color:var(--text-muted)">${s.label}</span>
+                <span style="font-weight:600;color:${color}">${fmt(v)}</span>
+              </div>`;
+            }).join('');
+          tip.style.display = 'block';
+          positionTip(e);
+        });
+        hit.addEventListener('mousemove', positionTip);
+        hit.addEventListener('mouseleave', () => {
+          guide.style.display = 'none';
+          tip.style.display = 'none';
+        });
+        hit.addEventListener('click', () => selectMonth(p.key));
+      });
+    }
 
     /* ── Savings Packages ───────────────────────────────────── */
     let editingPkgId = null;
