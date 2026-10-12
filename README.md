@@ -9,6 +9,7 @@ Kişisel gelir-gider takibi için tek dosyalı (`index.html`) bir web uygulamas�
 - **Özet şerit** — toplam gelir, toplam gider ve kalan bakiye
 - **Yıllık özet** — seçili yıldaki tüm aylar için kalan bakiye tablosu
 - **Pasta grafikler** — gelir ve gider dağılımının tipe göre görselleştirilmesi
+- **Raporlar — Tüm Zamanlar** — tüm aylık gelir, gider ve kalanın line chart'ı; yıl filtresi, tooltip ve tıklayınca aya gitme
 - **Çoklu ay girişi** — bir kalemi otomatik olarak N aya yayma
 - **Ay klonlama** — önceki bir ayın verilerini aktif aya kopyalama
 - **Sürükle & bırak** — kalemler liste içinde yeniden sıralanabilir
