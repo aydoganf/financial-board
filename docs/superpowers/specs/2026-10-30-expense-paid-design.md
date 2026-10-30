@@ -31,7 +31,7 @@ Invariant'ı koruyan ek kurallar:
   - Ödenmemiş: mevcut aksiyon butonu stili, `title="Ödendi olarak işaretle"`.
   - Ödenmiş: `.paid-btn.active` — yeşil arka plan (`var(--income)`), beyaz ✓, `title="Ödenmedi olarak işaretle"`.
 - Ödenmiş satır: `.item-row.paid` → `.type-badge`, `.item-name`, `.item-amount` için `text-decoration: line-through`, satır `opacity: .55`. Not satırı (`.item-note.paid`) da soluk ve üstü çizili.
-- Mobil: ek kural yok (ad zaten gizli; üç buton satıra sığar).
+- Mobil: üç buton 320px ekrana sığsın diye satır sıkılaştırılır — `.item-row` gap 6px / padding 8px 12px, `.item-amount` sabit genişlik yerine auto, aksiyon butonu padding 3px 6px, uzun tip etiketi `…` ile kısalır.
 
 ## Kapsam Dışı
 

@@ -64,6 +64,9 @@
     .item-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .item-actions button { padding: 3px 7px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); }
     .item-actions button:hover { background: var(--bg); }
+    .item-row.paid .type-badge, .item-row.paid .item-name, .item-row.paid .item-amount { text-decoration: line-through; opacity: .55; }
+    .item-note.paid { text-decoration: line-through; opacity: .55; }
+    .item-actions button.paid-btn.active { background: var(--income); border-color: var(--income); color: #fff; }
     .item-note { font-size: 11px; color: var(--text-muted); padding: 0 16px 8px 52px; border-top: none; }
     .item-edit-row { padding: 10px 16px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
     .item-edit-row .edit-fields { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -197,8 +200,11 @@
       .item-edit-row input[type=number],
       .item-edit-row select { width: 100%; }
 
+      .item-row { gap: 6px; padding: 8px 12px; }
       .item-row .item-name { display: none; }
-      .item-row .type-badge { margin-right: auto; }
+      .item-row .type-badge { margin-right: auto; min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .item-row .item-amount { width: auto; }
+      .item-actions button { padding: 3px 6px; }
 
       .pie-chart-wrap { width: 100%; }
 
@@ -661,15 +667,20 @@
         const badgeColor = type ? safeColor(type.color) : '#64748b';
         const badgeBg = badgeColor + '20';
         const badgeName = type ? type.name : '—';
-        const noteHtml = item.note ? `<div class="item-note">${escHtml(item.note)}</div>` : '';
+        const paidCls = item.paid ? ' paid' : '';
+        const noteHtml = item.note ? `<div class="item-note${paidCls}">${escHtml(item.note)}</div>` : '';
+        const paidBtn = kind === 'expense'
+          ? `<button class="paid-btn${item.paid ? ' active' : ''}" onclick="togglePaid('${item.id}')" title="${item.paid ? 'Ödenmedi olarak işaretle' : 'Ödendi olarak işaretle'}" aria-pressed="${item.paid ? 'true' : 'false'}">✓</button>`
+          : '';
         return `
-          <div class="item-row" draggable="true" data-kind="${kind}" data-idx="${idx}"
+          <div class="item-row${paidCls}" draggable="true" data-kind="${kind}" data-idx="${idx}" data-paid="${item.paid ? 1 : 0}"
                ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
             <span class="drag-handle">⠿</span>
             <span class="type-badge" style="color:${badgeColor};background:${badgeBg}">${escHtml(badgeName)}</span>
             <span class="item-name">${escHtml(item.name)}</span>
             <span class="item-amount" style="color:${amtColor}">${fmt(item.amount)}</span>
             <div class="item-actions">
+              ${paidBtn}
               <button onclick="editItem('${kind}', ${idx})">✏</button>
               <button onclick="deleteItem('${kind}', ${idx})" style="color:var(--expense)">🗑</button>
             </div>
@@ -718,6 +729,25 @@
         </div>`;
     }
 
+    function insertUnpaid(items, item) {
+      const at = items.filter(i => !i.paid).length;
+      items.splice(at, 0, item);
+      return at;
+    }
+
+    function togglePaid(id) {
+      if (editingState) cancelEdit(editingState.kind, editingState.idx);
+      const items = state.months[activeMonth].expenses;
+      const idx = items.findIndex(i => i.id === id);
+      if (idx === -1) return;
+      const [item] = items.splice(idx, 1);
+      item.paid = !item.paid;
+      if (item.paid) items.push(item);
+      else insertUnpaid(items, item);
+      saveState();
+      renderContent();
+    }
+
     function cloneMonth() {
       const srcKey = document.getElementById('clone-select').value;
       if (!srcKey) return;
@@ -725,7 +755,7 @@
       if (!src) return;
       state.months[activeMonth] = {
         incomes: src.incomes.map(i => ({ ...i, id: uuid(), _isNew: false })),
-        expenses: src.expenses.map(i => ({ ...i, id: uuid(), _isNew: false })),
+        expenses: src.expenses.map(i => ({ ...i, id: uuid(), _isNew: false, paid: false })),
       };
       saveState();
       renderContent();
@@ -738,7 +768,7 @@
       const types = kind === 'income' ? state.incomeTypes : state.expenseTypes;
       const defaultType = types[0] || null;
       const items = state.months[activeMonth][kind === 'income' ? 'incomes' : 'expenses'];
-      items.push({
+      const idx = insertUnpaid(items, {
         id: uuid(),
         name: defaultType ? defaultType.name : (kind === 'income' ? 'Yeni Gelir' : 'Yeni Gider'),
         amount: 0,
@@ -746,7 +776,7 @@
         note: '',
         _isNew: true,
       });
-      editItem(kind, items.length - 1);
+      editItem(kind, idx);
     }
 
     function deleteItem(kind, idx) {
@@ -791,7 +821,7 @@
           const nm = (totalMonths % 12) + 1;
           const nextKey = `${ny}-${String(nm).padStart(2, '0')}`;
           ensureMonth(nextKey);
-          state.months[nextKey][key].push({ ...baseItem, id: uuid() });
+          insertUnpaid(state.months[nextKey][key], { ...baseItem, id: uuid(), paid: false });
         }
       }
 
@@ -815,10 +845,12 @@
     // Drag & Drop
     let dragSrcKind = null;
     let dragSrcIdx = null;
+    let dragSrcPaid = null;
 
     function onDragStart(e) {
       dragSrcKind = e.currentTarget.dataset.kind;
       dragSrcIdx = parseInt(e.currentTarget.dataset.idx, 10);
+      dragSrcPaid = e.currentTarget.dataset.paid;
       e.currentTarget.style.opacity = '0.4';
       e.dataTransfer.effectAllowed = 'move';
     }
@@ -826,7 +858,7 @@
     function onDragOver(e) {
       e.preventDefault();
       const target = e.currentTarget;
-      if (target.dataset.kind !== dragSrcKind) {
+      if (target.dataset.kind !== dragSrcKind || target.dataset.paid !== dragSrcPaid) {
         e.dataTransfer.dropEffect = 'none';
         return;
       }
@@ -839,12 +871,13 @@
       const target = e.currentTarget;
       target.style.borderTop = '';
       if (dragSrcKind === null) return;
-      if (target.dataset.kind !== dragSrcKind) return;
+      if (target.dataset.kind !== dragSrcKind || target.dataset.paid !== dragSrcPaid) return;
       const destIdx = parseInt(target.dataset.idx, 10);
       const srcKind = dragSrcKind;
       const srcIdx = dragSrcIdx;
       dragSrcKind = null;
       dragSrcIdx = null;
+      dragSrcPaid = null;
       if (destIdx === srcIdx) return;
       const key = srcKind === 'income' ? 'incomes' : 'expenses';
       const items = state.months[activeMonth][key];
@@ -859,6 +892,7 @@
       e.currentTarget.style.borderTop = '';
       dragSrcKind = null;
       dragSrcIdx = null;
+      dragSrcPaid = null;
     }
 
     function onDragLeave(e) {
